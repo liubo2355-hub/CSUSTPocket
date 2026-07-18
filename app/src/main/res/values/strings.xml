@@ -1,0 +1,102 @@
+<resources>
+    <string name="app_name">掌上长理</string>
+    <string name="overview">首页</string>
+    <string name="function">服务</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string-array name="dormitory">
+        <item>"16栋A区"</item>,
+        <item>"16栋B区"</item>,
+        <item>"17栋"</item>,
+        <item>"弘毅轩1栋A区"</item>,
+        <item>"弘毅轩1栋B区"</item>,
+        <item>"弘毅轩2栋A区1-6楼"</item>,
+        <item>"弘毅轩2栋B区"</item>,
+        <item>"弘毅轩2栋C区"</item>,
+        <item>"弘毅轩2栋D区"</item>,
+        <item>"弘毅轩3栋A区"</item>,
+        <item>"弘毅轩3栋B区"</item>,
+        <item>"弘毅轩4栋A区"</item>,
+        <item>"弘毅轩4栋B区"</item>,
+        <item>"留学生宿舍"</item>,
+        <item>"敏行轩1栋A区"</item>,
+        <item>"敏行轩1栋B区"</item>,
+        <item>"敏行轩2栋A区"</item>,
+        <item>"敏行轩2栋B区"</item>,
+        <item>"敏行轩3栋A区"</item>,
+        <item>"敏行轩3栋B区"</item>,
+        <item>"敏行轩4栋A区"</item>,
+        <item>"敏行轩4栋B区"</item>,
+        <item>"行健轩1栋A区"</item>,
+        <item>"行健轩1栋B区"</item>,
+        <item>"行健轩2栋A区"</item>,
+        <item>"行健轩2栋B区"</item>,
+        <item>"行健轩3栋A区"</item>,
+        <item>"行健轩3栋B区"</item>,
+        <item>"行健轩4栋A区"</item>,
+        <item>"行健轩4栋B区"</item>,
+        <item>"行健轩5栋A区"</item>,
+        <item>"行健轩5栋B区"</item>,
+        <item>"行健轩6栋A区"</item>,
+        <item>"行健轩6栋B区"</item>,
+        <item>"至诚轩1栋A区"</item>,
+        <item>"至诚轩1栋B区"</item>,
+        <item>"至诚轩2栋A区"</item>,
+        <item>"至诚轩2栋B区"</item>,
+        <item>"至诚轩3栋A区"</item>,
+        <item>"至诚轩3栋B区"</item>,
+        <item>"至诚轩4栋A区"</item>,
+        <item>"至诚轩4栋B区"</item>,
+        <item>"至诚轩5栋A区"</item>,
+        <item>"至诚轩5栋B区"</item>,
+        <item>"至诚轩5栋C区"</item>,
+
+        <item>"西苑1栋"</item>,
+        <item>"西苑2栋"</item>,
+        <item>"西苑3栋"</item>,
+        <item>"西苑4栋"</item>,
+        <item>"西苑5栋"</item>,
+        <item>"西苑6栋"</item>,
+        <item>"西苑7栋"</item>,
+        <item>"西苑8栋"</item>,
+        <item>"西苑9栋"</item>,
+        <item>"西苑10栋"</item>,
+        <item>"西苑11栋"</item>,
+        <item>"东苑4栋"</item>,
+        <item>"东苑5栋"</item>,
+        <item>"东苑6栋"</item>,
+        <item>"东苑9栋"</item>,
+        <item>"东苑14栋"</item>,
+        <item>"东苑15栋"</item>,
+        <item>"南苑3栋"</item>,
+        <item>"南苑4栋"</item>,
+        <item>"南苑5栋"</item>,
+        <item>"南苑7栋"</item>,
+        <item>"南苑8栋"</item>,
+    </string-array>
+    <string-array name="school_location">
+        <item>"金盆岭校区"</item>
+        <item>"云塘校区"</item>
+    </string-array>
+    <string name="app_timetable_widget_description">掌上长理课表小组件</string>
+    <string name="widget_must_get_course_data">获取课表后才有数据哦~</string>
+    <string name="there_are_no_classes_today">今天已经没有课啦~</string>
+    <string name="profile_home">我的</string>
+<!--    用于MoocActivity的字符串-->
+    <string name="bind_notification">请先绑定学号和密码</string>
+    <!-- Strings used for fragments for navigation -->
+
+    <string name="pending_homework">未完成作业</string>
+    <string name="no_pending_assignments">暂无未完成作业</string>
+    <string name="school_account_not_bound_cannot_query">未绑定学校账号密码，无法查询</string>
+    <string name="error_unknown">未知错误</string>
+    <string name="eletronic_search">当前电量</string>
+    <string name="eletronic_widget_description">掌上长理电量查询小组件</string>
+    <string name="account_bind_failed">学号账号密码错误，请重新绑定</string>
+    <string name="no_classroom">无教室</string>
+    <string name="binding_privacy_statement">隐私声明：您的学号将用于身份认证并与账号绑定，是参与校园社区交流的必要凭证。密码仅用于统一身份认证数据查询，采用本地存储，不会上传至云端服务器，确保您的账号安全₍ᐢ..ᐢ₎♡。如果没有登陆，则学号也只会存到本地~</string>
+    <string name="sso_webview_cancel">关闭</string>
+    <string name="skin_change_success">皮肤已切换</string>
+    <string name="skin_change_failure">切换失败</string>
+    <string name="failure_internet">网络错误</string>
+    <string name="failure_process">加载失败</string>
+</resources>

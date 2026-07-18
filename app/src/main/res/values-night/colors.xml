@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ====================== 背景类 ====================== -->
+    <color name="color_bg_primary">#1A1B1E</color>
+    <color name="color_bg_card">#1A1B1E</color>
+    <color name="color_bg_card_high_contrast">#173D78</color>
+    <color name="color_bg_top_bar">#202838</color>
+    <color name="color_bg_secondary">#202838</color>
+    <color name="color_bg_recycler_view">#1A1B1E</color>
+
+    <!-- ====================== 文字类 ====================== -->
+    <color name="color_text_primary">#F3F6FC</color>
+    <color name="color_text_grey">#C4CCDA</color>
+    <color name="color_text_secondary">#929DB0</color>
+    <color name="color_text_highlight">#91ADFF</color>
+    <color name="color_text_button">#FFFFFF</color>
+
+    <!-- 帖子文字类 -->
+
+    <!-- 顶部标题文字 -->
+    <color name="color_title_top">#0E749C</color>
+
+    <!-- ====================== 图标类 ====================== -->
+    <color name="color_icon_setting">#91ADFF</color>
+    <color name="color_icon_primary">#91ADFF</color>
+    <color name="color_icon_secondary">#929DB0</color>
+
+    <!-- ====================== 按钮类 ====================== -->
+    <color name="color_bg_button">#2F6BFF</color>
+    <color name="color_bg_button_lowlight">#202E4E</color>
+
+    <!-- ====================== 主色 / 功能色 ====================== -->
+    <color name="color_text_functional">#91ADFF</color>
+    <color name="color_primary_blue">#91ADFF</color>
+
+    <!-- ====================== 分隔线 / 描边类 ====================== -->
+    <color name="color_divider">#D0D0D0</color>
+    <color name="color_outline_low_contrast">#C4DFFC</color>
+
+    <!-- ====================== 状态类（错误 / 成功） ====================== -->
+
+    <!-- ====================== 基础色 ====================== -->
+    <color name="color_base_white">#FFFFFFFF</color>
+    <color name="color_base_red">#DC3B00</color>
+    <color name="color_base_green">#00C853</color>
+
+    <color name="app_blue1">#2ABFFD</color>
+    <color name="app_red">#D81E06</color>
+
+    <color name="color_neum_highlight">#2A2D33</color>
+</resources>

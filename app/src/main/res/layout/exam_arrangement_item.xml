@@ -1,0 +1,132 @@
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_centerVertical="true"
+    android:layout_marginHorizontal="6dp"
+    android:layout_marginVertical="@dimen/portal_card_margin_vertical"
+    app:cardBackgroundColor="@color/color_bg_card"
+    app:cardCornerRadius="@dimen/portal_card_radius"
+    app:cardElevation="@dimen/portal_card_elevation"
+    app:strokeColor="@color/color_neum_highlight"
+    app:strokeWidth="1dp"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/portal_card_padding_horizontal"
+        android:paddingVertical="@dimen/portal_card_padding_vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="3dp">
+
+            <TextView
+                android:id="@+id/exam_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="计算机网络原理与技术B"
+                android:textColor="@color/color_text_primary"
+                android:textSize="16sp"
+                android:includeFontPadding="false"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/exam_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/exam_status_bg"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:text="已结束"
+                android:textColor="@color/color_text_grey"
+                android:textSize="11sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/ic_kaoshishijian"
+                android:tint="@color/color_icon_primary"/>
+
+            <TextView
+                android:id="@+id/exam_time"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="5"
+                android:text="2024-11-19 14:05~15:15"
+                android:textColor="@color/color_text_primary"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/ic_location"
+                android:tint="@color/color_icon_primary"/>
+
+            <TextView
+                android:id="@+id/exam_room"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_weight="5"
+                android:gravity="center_vertical"
+                android:text="金1教3楼-7机房"
+                android:textColor="@color/color_text_primary"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/xiaoqu"
+                android:tint="@color/color_icon_primary"/>
+
+            <TextView
+                android:id="@+id/exam_place"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_weight="5"
+                android:gravity="center_vertical"
+                android:text="金盘岭校区"
+                android:textColor="@color/color_text_primary"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+</com.google.android.material.card.MaterialCardView>
