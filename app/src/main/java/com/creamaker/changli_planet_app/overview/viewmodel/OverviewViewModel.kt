@@ -224,14 +224,15 @@ class OverviewViewModel : ViewModel() {
     ): OverviewUiState {
         if (!preserveVisibleContent) return incoming
 
-        val keepCourses = current.todayCourses.isNotEmpty() && incoming.todayCourses.isEmpty()
         val keepExams = current.upcomingExams.isNotEmpty() && incoming.upcomingExams.isEmpty()
         val keepExamHighlight = current.examHighlight != null && incoming.examHighlight == null
 
         return incoming.copy(
             metrics = mergeMetrics(current.metrics, incoming.metrics),
-            todayCourses = if (keepCourses) current.todayCourses else incoming.todayCourses,
-            todayCourseMessage = if (keepCourses) current.todayCourseMessage else incoming.todayCourseMessage,
+            // Local timetable data is authoritative. Keeping a previously visible course here
+            // makes a deleted custom course remain on the home card after returning from timetable.
+            todayCourses = incoming.todayCourses,
+            todayCourseMessage = incoming.todayCourseMessage,
             upcomingExams = if (keepExams) current.upcomingExams else incoming.upcomingExams,
             examMessage = if (keepExams) current.examMessage else incoming.examMessage,
             examHighlight = if (keepExamHighlight) current.examHighlight else incoming.examHighlight,

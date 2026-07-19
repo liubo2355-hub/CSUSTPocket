@@ -22,6 +22,7 @@ data class OverviewUiState(
     val todayCourses: List<OverviewCourseUiModel> = emptyList(),
     val todayCourseMessage: String = "",
     val isShowingTomorrow: Boolean = false,
+    val courseHighlight: CourseHighlightUiModel? = null,
     val pendingHomeworks: List<OverviewHomeworkUiModel> = emptyList(),
     val pendingHomeworkMessage: String = "",
     val pendingTests: List<OverviewTestUiModel> = emptyList(),
@@ -55,7 +56,26 @@ data class OverviewCourseUiModel(
     val teacher: String,
     val timeText: String,
     val accentLabel: String,
-    val accentColor: Color
+    val accentColor: Color,
+    val startSection: Int = 0,
+    val sectionSpan: Int = 0,
+)
+
+enum class CourseHighlightType {
+    CURRENT,
+    TODAY_UPCOMING,
+    TOMORROW,
+    EMPTY,
+}
+
+@Immutable
+data class CourseHighlightUiModel(
+    val type: CourseHighlightType,
+    val title: String,
+    val courseName: String,
+    val timeText: String,
+    val location: String = "",
+    val moreCount: Int = 0,
 )
 
 @Immutable

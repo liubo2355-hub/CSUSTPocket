@@ -41,6 +41,6 @@ interface CourseDao {
     @Query("SELECT COUNT(*) FROM courses")
     fun getAllCourseCount(): Int
 
-    @Query("SELECT COUNT(*) FROM courses WHERE term = :term")
-    fun getCoursesCountByTerm(term: String): Int
+    @Query("SELECT COUNT(*) FROM courses WHERE term = :term AND studentId = :studentId AND studentPassword = :studentPassword")
+    fun getCoursesCountByTerm(term: String, studentId: String, studentPassword: String): Int
 }

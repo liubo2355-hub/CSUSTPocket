@@ -17,6 +17,7 @@ import com.creamaker.changli_planet_app.core.noOpDelegate
 import com.creamaker.changli_planet_app.databinding.ActivityAddCourseInTimetableBinding
 import com.creamaker.changli_planet_app.feature.common.data.local.entity.TimeTableMySubject
 import com.creamaker.changli_planet_app.feature.common.data.local.room.database.CoursesDataBase
+import com.creamaker.changli_planet_app.feature.timetable.ui.compose.customCourseSpan
 import com.creamaker.changli_planet_app.widget.dialog.WeekMultiSelectBottomDialog
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
@@ -36,6 +37,7 @@ class AddCourseActivity : FullScreenActivity<ActivityAddCourseInTimetableBinding
     private val courseStep by lazy { binding.customCourseStep }
     private var curWeek: Int = 0
     private var selectedWeekDay: Int = 1
+    private var selectedStep: Int = 2
     private val selectedWeeks = linkedSetOf<Int>()
     private val studentId by lazy { StudentInfoManager.studentId }
     private val studentPassword by lazy { StudentInfoManager.studentPassword }
@@ -64,11 +66,13 @@ class AddCourseActivity : FullScreenActivity<ActivityAddCourseInTimetableBinding
         supportActionBar?.hide()
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         val startCourse = intent.getIntExtra("start", 0)
+        selectedStep = customCourseSpan(startCourse)
         curWeek = intent.getIntExtra("curWeek", 1).coerceIn(1, 20)
         selectedWeekDay = intent.getIntExtra("day", 1).coerceIn(1, 7)
         selectedWeeks.clear()
         selectedWeeks.add(curWeek)
-        courseStep.text = "0$startCourse - 0${startCourse + 1} 节"
+        val endCourse = startCourse + selectedStep - 1
+        courseStep.text = "%02d - %02d 节".format(startCourse, endCourse)
         courseWeekDay.text = weekDayMap[selectedWeekDay]
         refreshSelectedWeeksText()
 
@@ -132,7 +136,7 @@ class AddCourseActivity : FullScreenActivity<ActivityAddCourseInTimetableBinding
                 weekday = intent.getIntExtra("day", 0) // 底层的索引从0开始，但计算时却进行了 - 1 ，所以这里要 + 1
                 start = intent.getIntExtra("start", 0)
             }
-            mySubject.step = 2
+            mySubject.step = selectedStep
             if (courseTeacher.text.isNotEmpty()) {
                 mySubject.teacher = courseTeacher.text.toString()
             } else {

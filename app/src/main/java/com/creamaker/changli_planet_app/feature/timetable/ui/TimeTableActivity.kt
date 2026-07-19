@@ -89,7 +89,6 @@ class TimeTableActivity : AppCompatActivity() {
     private val weekList by lazy { (1..20).map { "第${it}周" } }
 
     private var uiState by mutableStateOf(TimeTableUiState())
-    private var isRefreshing by mutableStateOf(false)
     private var detailCourse by mutableStateOf<TimeTableCourseUi?>(null)
     private var overlapCourses by mutableStateOf<List<TimeTableCourseUi>>(emptyList())
     private var pendingDeleteCourse by mutableStateOf<TimeTableCourseUi?>(null)
@@ -184,7 +183,7 @@ class TimeTableActivity : AppCompatActivity() {
         buildDayHeaders(term, week, anchor)
     }
 },
-            isRefreshing = isRefreshing,
+            isRefreshing = responseState is ApiResponse.Loading,
             onBackClick = { onBackPressedDispatcher.onBackPressed() },
             onRefreshClick = {
                 viewModel.loadCourses(term, forceRefresh = true)
@@ -194,8 +193,8 @@ class TimeTableActivity : AppCompatActivity() {
             onWeekChange = { week ->
                 viewModel.selectWeek("第${week.coerceIn(1, 20)}周")
             },
-            onEmptySlotClick = { day, startSection ->
-                launchAddCourse(day, startSection, displayWeek, term)
+            onEmptySlotClick = { pageWeek, day, startSection ->
+                launchAddCourse(day, startSection, pageWeek, term)
             },
             onCourseClick = {
                 overlapCourses = emptyList()

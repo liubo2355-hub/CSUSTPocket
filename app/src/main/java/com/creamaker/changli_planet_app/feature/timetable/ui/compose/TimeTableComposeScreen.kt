@@ -109,10 +109,6 @@ private fun buildUniqueCourseColorMap(courses: List<TimeTableCourseUi>): Map<Str
     }.toMap()
 }
 
-private const val TotalSections = 10
-private const val TotalColumns = 7
-private const val TotalWeeks = 20
-
 enum class WeekBadgeState {
     NotStarted,
     Current,
@@ -146,7 +142,7 @@ fun TimeTableComposeScreen(
     onTermClick: () -> Unit,
     onWeekClick: () -> Unit,
     onWeekChange: (Int) -> Unit,
-    onEmptySlotClick: (dayOfWeek: Int, startSection: Int) -> Unit,
+    onEmptySlotClick: (week: Int, dayOfWeek: Int, startSection: Int) -> Unit,
     onCourseClick: (TimeTableCourseUi) -> Unit,
     onOverlapCoursesClick: (List<TimeTableCourseUi>) -> Unit,
     onCourseLongClick: (TimeTableCourseUi) -> Unit,
@@ -154,12 +150,12 @@ fun TimeTableComposeScreen(
     val colors = AppTheme.colors
     val sizeSpec = remember { TimetableSizeSpec() }
     val pagerState = rememberPagerState(
-        initialPage = (displayWeek - 1).coerceIn(0, TotalWeeks - 1),
-        pageCount = { TotalWeeks },
+        initialPage = (displayWeek - 1).coerceIn(0, TIMETABLE_TOTAL_WEEKS - 1),
+        pageCount = { TIMETABLE_TOTAL_WEEKS },
     )
 
     LaunchedEffect(displayWeek) {
-        val targetPage = (displayWeek - 1).coerceIn(0, TotalWeeks - 1)
+        val targetPage = (displayWeek - 1).coerceIn(0, TIMETABLE_TOTAL_WEEKS - 1)
         if (!pagerState.isScrollInProgress && pagerState.currentPage != targetPage) {
             if (abs(pagerState.currentPage - targetPage) > 2) {
                 pagerState.scrollToPage(targetPage)
@@ -170,8 +166,8 @@ fun TimeTableComposeScreen(
     }
 
     val coursesByWeek = remember(courses) {
-        (1..TotalWeeks).associateWith { week ->
-            courses.filter { week in it.weeks && it.sectionSpan > 0 && it.startSection > 0 }
+        (1..TIMETABLE_TOTAL_WEEKS).associateWith { week ->
+            courses.filter { it.isVisibleInWeek(week) }
         }
     }
 
@@ -269,7 +265,10 @@ fun TimeTableComposeScreen(
                     cellHeight = sizeSpec.cellHeight,
                     scrollState = scrollState,
                     visibleCourses = pageCourses,
-                    onEmptySlotClick = onEmptySlotClick,
+                    onEmptySlotClick = { dayOfWeek, startSection ->
+                        val slot = timetableGridSlot(week, dayOfWeek, startSection)
+                        onEmptySlotClick(slot.week, slot.dayOfWeek, slot.startSection)
+                    },
                     onCourseClick = onCourseClick,
                     onOverlapCoursesClick = onOverlapCoursesClick,
                     onCourseLongClick = onCourseLongClick,
@@ -524,7 +523,7 @@ private fun TimeAxisColumn(
     }
 
     Column(modifier = modifier) {
-        repeat(TotalSections) { index ->
+        repeat(TIMETABLE_TOTAL_SECTIONS) { index ->
             Box(
                 modifier = Modifier
                     .height(cellHeight)
@@ -565,15 +564,14 @@ private fun TimeTableGrid(
     onCourseLongClick: (TimeTableCourseUi) -> Unit,
 ) {
     val colors = AppTheme.colors
-    val totalHeight = cellHeight * TotalSections
+    val totalHeight = cellHeight * TIMETABLE_TOTAL_SECTIONS
     val courseColorMap = remember(visibleCourses) {
         buildUniqueCourseColorMap(visibleCourses)
     }
     val cellCoursesMap = remember(visibleCourses) {
         val result = mutableMapOf<Pair<Int, Int>, MutableList<TimeTableCourseUi>>()
         visibleCourses.forEach { course ->
-            val endSection = (course.startSection + course.sectionSpan - 1).coerceAtMost(TotalSections)
-            for (section in course.startSection..endSection) {
+            for (section in course.occupiedSections()) {
                 val key = course.dayOfWeek to section
                 result.getOrPut(key) { mutableListOf() }.add(course)
             }
@@ -583,9 +581,8 @@ private fun TimeTableGrid(
     val courseOverlapMap = remember(visibleCourses, cellCoursesMap) {
         val result = mutableMapOf<Int, List<TimeTableCourseUi>>()
         visibleCourses.forEach { course ->
-            val endSection = (course.startSection + course.sectionSpan - 1).coerceAtMost(TotalSections)
             val overlaps = linkedSetOf<TimeTableCourseUi>()
-            for (section in course.startSection..endSection) {
+            for (section in course.occupiedSections()) {
                 cellCoursesMap[course.dayOfWeek to section].orEmpty().forEach { overlaps.add(it) }
             }
             result[course.id] = overlaps.toList()
@@ -599,7 +596,7 @@ private fun TimeTableGrid(
             .verticalScroll(scrollState),
     ) {
         val boardWidth = maxWidth
-        val columnWidth = boardWidth / TotalColumns
+        val columnWidth = boardWidth / TIMETABLE_TOTAL_DAYS
 
         Box(
             modifier = Modifier
@@ -612,9 +609,9 @@ private fun TimeTableGrid(
                 val h = size.height
                 val w = size.width
                 val rowHeightPx = cellHeight.toPx()
-                val colWidthPx = w / TotalColumns
+                val colWidthPx = w / TIMETABLE_TOTAL_DAYS
 
-                repeat(TotalSections + 1) { row ->
+                repeat(TIMETABLE_TOTAL_SECTIONS + 1) { row ->
                     val y = row * rowHeightPx
                     drawLine(
                         lineColor,
@@ -624,7 +621,7 @@ private fun TimeTableGrid(
                     )
                 }
 
-                repeat(TotalColumns + 1) { col ->
+                repeat(TIMETABLE_TOTAL_DAYS + 1) { col ->
                     val x = col * colWidthPx
                     drawLine(
                         lineColor,
@@ -636,9 +633,9 @@ private fun TimeTableGrid(
             }
 
             Column(modifier = Modifier.matchParentSize()) {
-                repeat(TotalSections) { section ->
+                repeat(TIMETABLE_TOTAL_SECTIONS) { section ->
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        repeat(TotalColumns) { day ->
+                        repeat(TIMETABLE_TOTAL_DAYS) { day ->
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
@@ -670,7 +667,7 @@ private fun TimeTableGrid(
             visibleCourses.forEach { course ->
                 val x = columnWidth * (course.dayOfWeek - 1)
                 val y = cellHeight * (course.startSection - 1)
-                val cardHeight = cellHeight * course.sectionSpan
+                val cardHeight = cellHeight * course.occupiedSections().count()
 
                 TimeTableCourseCard(
                     course = course,
@@ -828,7 +825,7 @@ private fun TimeTableScreenPreview() {
             onTermClick = {},
             onWeekClick = {},
             onWeekChange = {},
-            onEmptySlotClick = { _, _ -> },
+            onEmptySlotClick = { _, _, _ -> },
             onCourseClick = {},
             onOverlapCoursesClick = {},
             onCourseLongClick = {},

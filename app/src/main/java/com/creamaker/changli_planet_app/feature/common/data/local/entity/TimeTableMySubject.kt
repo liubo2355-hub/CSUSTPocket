@@ -13,7 +13,18 @@ import com.zhuangfei.timetable.model.ScheduleEnable
 @Entity(
     tableName = "courses",
     indices = [Index(
-        value = ["courseName", "classroom", "teacher", "start", "step", "weekday", "term"],
+        value = [
+            "courseName",
+            "classroom",
+            "teacher",
+            "weeks",
+            "start",
+            "step",
+            "weekday",
+            "term",
+            "studentId",
+            "studentPassword",
+        ],
         unique = true
     )]
 )

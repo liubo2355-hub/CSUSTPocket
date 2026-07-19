@@ -80,10 +80,9 @@ class TimeTableViewModel : ViewModel() {
 
     fun initFirstLaunch() {
         if (mmkv.getBoolean("isFirstLaunch", true)) {
-            viewModelScope.launch(Dispatchers.IO) {
-                dataBase.clearAllTables()
-                mmkv.encode("isFirstLaunch", false)
-            }
+            // A newly-created Room database is already empty. Clearing it asynchronously here
+            // races with the first load and can erase courses that have just been fetched.
+            mmkv.encode("isFirstLaunch", false)
         }
     }
 
@@ -95,7 +94,7 @@ class TimeTableViewModel : ViewModel() {
 
             try {
                 val cur = System.currentTimeMillis()
-                val count = courseDao.getCoursesCountByTerm(term)
+                val count = courseDao.getCoursesCountByTerm(term, studentId, studentPassword)
                 val lastUpdate = mmkv.decodeLong("lastUpdate_$term", 0L)
                 val needRefresh = count == 0 || forceRefresh || (cur - lastUpdate > 1000 * 60 * 60 * 48)
                 val courses = normalizeCourses(
@@ -175,29 +174,11 @@ class TimeTableViewModel : ViewModel() {
     }
 
     private fun distinctSubjects(subjects: MutableList<TimeTableMySubject>): MutableList<TimeTableMySubject> {
-        return subjects.distinctBy {
-            "${it.courseName}${it.teacher}${it.weeks}${it.classroom}${it.start}${it.step}${it.term}${it.weekday}"
-        }.map { course ->
-            if (course.weekday == 7) {
-                val adjustedWeeks = course.weeks?.map { week -> week - 1 }
-                course.copy(weeks = adjustedWeeks)
-            } else {
-                course
-            }
-        }.toMutableList()
+        return normalizeTimetableCourses(subjects).toMutableList()
     }
 
     private fun normalizeCourses(courses: List<TimeTableMySubject>): List<TimeTableMySubject> {
-        return courses.distinctBy {
-            "${it.courseName}${it.teacher}${it.weeks}${it.classroom}${it.start}${it.step}${it.term}${it.weekday}"
-        }.map { course ->
-            if (course.weekday == 7) {
-                val adjustedWeeks = course.weeks?.map { week -> week - 1 }
-                course.copy(weeks = adjustedWeeks)
-            } else {
-                course
-            }
-        }
+        return normalizeTimetableCourses(courses)
     }
 
     fun addCourse(course: TimeTableMySubject) {
@@ -252,6 +233,7 @@ class TimeTableViewModel : ViewModel() {
                 }.toMutableList()
 
                 updateUiState(updatedSubjects, term)
+                WidgetUpdateManager.updateTimetable(PlanetApplication.appContext)
                 _deleteCourseResponse.value = ApiResponse.Success(Unit)
 
             } catch (e: Exception) {
@@ -408,4 +390,10 @@ class TimeTableViewModel : ViewModel() {
     fun hasTermStarted(term: String): Boolean = CommonInfo.hasTermStarted(term)
 
     data class WeekJsonInfo(val weeks: List<Int>, val start: Int, val step: Int)
+}
+
+internal fun normalizeTimetableCourses(courses: List<TimeTableMySubject>): List<TimeTableMySubject> {
+    return courses.distinctBy {
+        "${it.courseName}${it.teacher}${it.weeks}${it.classroom}${it.start}${it.step}${it.term}${it.weekday}"
+    }
 }

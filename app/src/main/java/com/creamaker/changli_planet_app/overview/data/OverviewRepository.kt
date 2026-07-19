@@ -18,6 +18,7 @@ import com.creamaker.changli_planet_app.overview.data.local.OverviewLocalCache
 import com.creamaker.changli_planet_app.overview.data.local.OverviewLocalCache.ElectricityHistoryEntry
 import com.creamaker.changli_planet_app.overview.data.local.OverviewLocalCache.ElectricitySnapshot
 import com.creamaker.changli_planet_app.overview.ui.model.OverviewCourseUiModel
+import com.creamaker.changli_planet_app.overview.ui.model.CourseHighlightType
 import com.creamaker.changli_planet_app.overview.ui.model.OverviewExamUiModel
 import com.creamaker.changli_planet_app.overview.ui.model.OverviewMetricUiModel
 import com.creamaker.changli_planet_app.overview.ui.model.OverviewUiState
@@ -111,32 +112,15 @@ class OverviewRepository(
         val currentWeek = getCurrentWeek(currentTerm)
         val currentUser = UserInfoManager.userId.takeIf { it > 0 }?.let { userDao.getUserById(it) }
 
-        val isShowingTomorrow = Calendar.getInstance().get(Calendar.HOUR_OF_DAY) >= 21
-        val targetWeekday: Int
-        val targetWeek: Int
-        val targetCalendar: Calendar
-
-        if (isShowingTomorrow) {
-            targetCalendar = Calendar.getInstance().apply { add(Calendar.DAY_OF_MONTH, 1) }
-            targetWeekday = targetCalendar.let {
-                when (it.get(Calendar.DAY_OF_WEEK)) {
-                    Calendar.SUNDAY -> 7
-                    else -> it.get(Calendar.DAY_OF_WEEK) - 1
-                }
-            }
-            targetWeek = if (targetWeekday == 1) currentWeek + 1 else currentWeek
-        } else {
-            targetCalendar = Calendar.getInstance()
-            targetWeekday = Calendar.getInstance().let {
-                when (it.get(Calendar.DAY_OF_WEEK)) {
-                    Calendar.SUNDAY -> 7
-                    else -> it.get(Calendar.DAY_OF_WEEK) - 1
-                }
-            }
-            targetWeek = currentWeek
-        }
-
-        val displayCourses = courses.toDayCourses(targetWeekday, targetWeek)
+        val todayCalendar = Calendar.getInstance()
+        val tomorrowCalendar = (todayCalendar.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, 1) }
+        val todayWeekday = todayCalendar.toCourseWeekday()
+        val tomorrowWeekday = tomorrowCalendar.toCourseWeekday()
+        val tomorrowWeek = if (tomorrowWeekday == 1) currentWeek + 1 else currentWeek
+        val todayCourses = courses.toDayCourses(todayWeekday, currentWeek)
+        val tomorrowCourses = courses.toDayCourses(tomorrowWeekday, tomorrowWeek)
+        val courseHighlight = CourseHighlightSelector.select(todayCourses, tomorrowCourses)
+        val isShowingTomorrow = courseHighlight.type == CourseHighlightType.TOMORROW
         val electricitySnapshot = OverviewLocalCache.getElectricitySnapshot()
         val isElectricityBound = hasElectricityBinding() || electricitySnapshot != null
 
@@ -149,18 +133,19 @@ class OverviewRepository(
             accountName = currentUser?.account?.takeIf { it.isNotBlank() } ?: UserInfoManager.account.ifBlank { "掌上长理" },
             avatarUrl = currentUser?.avatarUrl?.takeIf { it.isNotBlank() } ?: UserInfoManager.userAvatar,
             studentId = studentId,
-            dateText = buildDateText(currentTerm, targetWeek, targetCalendar, isShowingTomorrow),
+            dateText = buildDateText(currentTerm, currentWeek, todayCalendar),
             currentTerm = currentTerm,
             currentWeek = currentWeek,
             dataSourceLabel = if (courses.isEmpty() && grades.isEmpty()) "本地数据已上屏" else "已完成静默刷新",
             metrics = buildMetrics(grades, electricitySnapshot, isElectricityBound),
-            todayCourses = displayCourses,
+            todayCourses = todayCourses,
             todayCourseMessage = when {
                 studentId.isBlank() || studentPassword.isBlank() -> "先绑定学号"
-                displayCourses.isNotEmpty() -> ""
+                todayCourses.isNotEmpty() -> ""
                 else -> "没有数据"
             },
             isShowingTomorrow = isShowingTomorrow,
+            courseHighlight = courseHighlight,
             pendingHomeworks = emptyList(),
             pendingHomeworkMessage = when {
                 studentId.isBlank() || studentPassword.isBlank() -> "先绑定学号"
@@ -522,9 +507,16 @@ class OverviewRepository(
                     teacher = course.teacher.ifBlank { "教师待定" },
                     timeText = buildCourseTimeText(course.start, course.step),
                     accentLabel = if (course.isCustom) "自定义" else "校园课表",
-                    accentColor = colors[index % colors.size]
+                    accentColor = colors[index % colors.size],
+                    startSection = course.start,
+                    sectionSpan = course.step,
                 )
             }
+    }
+
+    private fun Calendar.toCourseWeekday(): Int = when (get(Calendar.DAY_OF_WEEK)) {
+        Calendar.SUNDAY -> 7
+        else -> get(Calendar.DAY_OF_WEEK) - 1
     }
 
     private fun buildCourseTimeText(startSection: Int, sectionSpan: Int): String {

@@ -66,6 +66,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
@@ -157,6 +158,28 @@ private fun OverviewScreen(
     onUrgentPresented: (String) -> Unit
 ) {
     val colors = AppTheme.colors
+    val isLightPage = colors.overviewPageBackgroundColor.luminance() > 0.5f
+    val pageBackground = remember(colors.overviewPageBackgroundColor) {
+        if (isLightPage) {
+            Brush.verticalGradient(
+                colorStops = arrayOf(
+                    0.00f to Color(0xFFE5F2FF),
+                    0.24f to Color(0xFFEAF4FE),
+                    0.58f to Color(0xFFEEF5FC),
+                    1.00f to Color(0xFFF1F5FA)
+                )
+            )
+        } else {
+            Brush.verticalGradient(
+                colorStops = arrayOf(
+                    0.00f to Color(0xFF101A26),
+                    0.28f to Color(0xFF131B24),
+                    0.62f to Color(0xFF171C23),
+                    1.00f to Color(0xFF1A1D22)
+                )
+            )
+        }
+    }
     var showAnnouncementCenter by remember { mutableStateOf(false) }
     var urgentAnnouncement by remember { mutableStateOf<AnnouncementUiModel?>(null) }
     LaunchedEffect(announcementState.urgentToPresent?.readKey) {
@@ -189,7 +212,7 @@ private fun OverviewScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.overviewPageBackgroundColor),
+            .background(pageBackground),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -248,11 +271,6 @@ private fun HomeGreetingHeader(
             .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            drawRect(
-                brush = Brush.verticalGradient(
-                    listOf(Color(0xFFDDEEFF), colors.overviewPageBackgroundColor.copy(alpha = 0.08f))
-                )
-            )
             val building = Color(0xFF79B8ED).copy(alpha = 0.16f)
             val baseY = size.height * 0.96f
             drawRoundRect(building, Offset(size.width * 0.55f, baseY - size.height * 0.42f), androidx.compose.ui.geometry.Size(size.width * 0.39f, size.height * 0.42f), androidx.compose.ui.geometry.CornerRadius(12f))
@@ -390,15 +408,20 @@ private fun LegacyPortalDashboard(
 @Composable
 private fun HomeCourseHero(state: OverviewUiState, onClick: () -> Unit) {
     val colors = AppTheme.colors
-    val firstCourse = state.todayCourses.firstOrNull()
-    val headline = firstCourse?.courseName ?: state.todayCourseMessage
-        .takeUnless { it.isBlank() || it.contains("没有数据") }
-        .orEmpty()
-        .ifBlank { "今天没有课程，好好休息吧" }
+    val highlight = state.courseHighlight
+    val statusText = if (state.isBoundStudent) highlight?.title.orEmpty().ifBlank { "默认学期" } else "未绑定"
+    val headline = when {
+        !state.isBoundStudent -> "请先绑定学号"
+        highlight != null -> highlight.courseName
+        else -> "今天没有课程，好好休息吧"
+    }
     val supporting = when {
-        firstCourse != null -> listOf(firstCourse.timeText, firstCourse.classroom).filter { it.isNotBlank() }.joinToString(" · ")
-        state.isShowingTomorrow -> "正在展示明日课表"
-        else -> "明天也要记得查看课表哦"
+        !state.isBoundStudent -> "绑定后即可查看当前与下一节课程"
+        highlight != null -> buildString {
+            append(listOf(highlight.timeText, highlight.location).filter { it.isNotBlank() }.joinToString(" · "))
+            if (highlight.moreCount > 0) append(" · 另有${highlight.moreCount}节")
+        }
+        else -> "暂无后续课程安排"
     }
     HyperSurface(
         shape = RoundedCornerShape(28.dp),
@@ -454,7 +477,7 @@ private fun HomeCourseHero(state: OverviewUiState, onClick: () -> Unit) {
                     Text("我的课表", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.width(7.dp))
                     Text(
-                        "默认学期",
+                        statusText,
                         color = Color.White.copy(alpha = 0.92f),
                         fontSize = 10.sp,
                         modifier = Modifier
