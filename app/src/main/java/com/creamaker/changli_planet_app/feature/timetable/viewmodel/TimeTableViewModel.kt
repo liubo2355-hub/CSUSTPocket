@@ -56,6 +56,8 @@ class TimeTableViewModel : ViewModel() {
     // Delete Course Response
     private val _deleteCourseResponse = MutableLiveData<ApiResponse<Unit>>()
     val deleteCourseResponse: LiveData<ApiResponse<Unit>> = _deleteCourseResponse
+    private val _moveCourseResponse = MutableLiveData<ApiResponse<Unit>>()
+    val moveCourseResponse: LiveData<ApiResponse<Unit>> = _moveCourseResponse
 
     // Current Display Week
     private val _curDisplayWeek = MutableLiveData<Int>()
@@ -139,7 +141,20 @@ class TimeTableViewModel : ViewModel() {
                             return@withContext
                         }
 
-                        val mergedCourses = distinctSubjects(subjects)
+                        val positionOverrides = courseDao
+                            .getCoursesByTerm(term, studentId, studentPassword)
+                            .filter { it.positionOverridden && it.positionOverrideKey.isNotBlank() }
+                            .associateBy { it.positionOverrideKey }
+                        val mergedCourses = distinctSubjects(subjects).map { incoming ->
+                            positionOverrides[positionKey(incoming)]?.let { overridden ->
+                                incoming.copy(
+                                    weekday = overridden.weekday,
+                                    start = overridden.start,
+                                    positionOverridden = true,
+                                    positionOverrideKey = overridden.positionOverrideKey,
+                                )
+                            } ?: incoming
+                        }.toMutableList()
                         courseDao.deleteNetworkCoursesByTerm(term, studentId, studentPassword)
                         courseDao.insertCourses(mergedCourses)
                         val allLocalCourses = normalizeCourses(
@@ -182,24 +197,30 @@ class TimeTableViewModel : ViewModel() {
     }
 
     fun addCourse(course: TimeTableMySubject) {
+        addCourses(listOf(course))
+    }
+
+    fun addCourses(courses: List<TimeTableMySubject>) {
+        if (courses.isEmpty()) return
         viewModelScope.launch {
             _addCourseResponse.value = ApiResponse.Loading()
 
             try {
-                val insertedId = withContext(Dispatchers.IO) {
-                    courseDao.insertCourse(course)
+                val insertedCourses = withContext(Dispatchers.IO) {
+                    courses.mapNotNull { course ->
+                        val insertedId = courseDao.insertCourse(course)
+                        if (insertedId == -1L) null else course.copy(id = insertedId.toInt())
+                    }
                 }
 
-                if (insertedId == -1L) {
+                if (insertedCourses.isEmpty()) {
                     _addCourseResponse.value = ApiResponse.Error("该课程已存在，无法重复添加")
                     return@launch
                 }
 
-                val insertedCourse = course.copy(id = insertedId.toInt())
-
                 val currentState = _uiState.value ?: TimeTableUiState()
                 val updatedSubjects = currentState.subjects.toMutableList().apply {
-                    add(insertedCourse)
+                    addAll(insertedCourses)
                 }
 
                 updateUiState(updatedSubjects, currentState.term)
@@ -390,10 +411,70 @@ class TimeTableViewModel : ViewModel() {
     fun hasTermStarted(term: String): Boolean = CommonInfo.hasTermStarted(term)
 
     data class WeekJsonInfo(val weeks: List<Int>, val start: Int, val step: Int)
+
+    private fun normalizeTimetableCourses(courses: List<TimeTableMySubject>): List<TimeTableMySubject> {
+        return courses.distinctBy {
+            "${it.courseName}${it.teacher}${it.weeks}${it.classroom}${it.start}${it.step}${it.term}${it.weekday}"
+        }
+    }
+
+    private fun positionKey(course: TimeTableMySubject): String = buildString {
+        append(course.courseName.trim())
+        append('|').append(course.teacher.trim())
+        append('|').append(course.classroom.orEmpty().trim())
+        append('|').append(course.weeks.orEmpty().sorted().joinToString(","))
+        append('|').append(course.step)
+        append('|').append(course.term)
+        append('|').append(course.studentId)
+        append('|').append(course.studentPassword)
+        append('|').append(course.weekday)
+        append('|').append(course.start)
+    }
+
+    fun moveCourse(courseId: Int, weekday: Int, startSection: Int, term: String) {
+        viewModelScope.launch {
+            _moveCourseResponse.value = ApiResponse.Loading()
+            try {
+                val currentState = _uiState.value ?: TimeTableUiState()
+                val sourceCourse = currentState.subjects.firstOrNull { it.id == courseId }
+                if (sourceCourse == null) {
+                    _moveCourseResponse.value = ApiResponse.Error("移动失败，课程不存在")
+                    return@launch
+                }
+                val overrideKey = sourceCourse.positionOverrideKey
+                    .ifBlank { positionKey(sourceCourse) }
+                val updatedRows = withContext(Dispatchers.IO) {
+                    courseDao.moveCourse(courseId, weekday, startSection, overrideKey)
+                }
+                if (updatedRows <= 0) {
+                    _moveCourseResponse.value = ApiResponse.Error("仅支持移动自定义课程")
+                    return@launch
+                }
+                val updatedSubjects = currentState.subjects.map { subject ->
+                    if (subject.id == courseId) {
+                        subject.copy(
+                            weekday = weekday,
+                            start = startSection,
+                            positionOverridden = true,
+                            positionOverrideKey = overrideKey,
+                        )
+                    } else {
+                        subject
+                    }
+                }.toMutableList()
+                updateUiState(updatedSubjects, term)
+                WidgetUpdateManager.updateTimetable(PlanetApplication.appContext)
+                _moveCourseResponse.value = ApiResponse.Success(Unit)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error moving course", e)
+                _moveCourseResponse.value = ApiResponse.Error("移动课程失败: ${e.message}")
+            }
+        }
+    }
 }
 
-internal fun normalizeTimetableCourses(courses: List<TimeTableMySubject>): List<TimeTableMySubject> {
-    return courses.distinctBy {
-        "${it.courseName}${it.teacher}${it.weeks}${it.classroom}${it.start}${it.step}${it.term}${it.weekday}"
-    }
+internal fun normalizeTimetableCourses(
+    courses: List<TimeTableMySubject>,
+): List<TimeTableMySubject> = courses.distinctBy {
+    "${it.courseName}${it.teacher}${it.weeks}${it.classroom}${it.start}${it.step}${it.term}${it.weekday}"
 }

@@ -43,7 +43,12 @@ data class TimeTableMySubject(
     val isCustom: Boolean = false,
     var term: String = "",
     val studentId : String = "",
-    val studentPassword : String = ""
+    val studentPassword : String = "",
+    var credit: String = "",
+    var note: String = "",
+    var customColor: Long? = null,
+    var positionOverridden: Boolean = false,
+    var positionOverrideKey: String = "",
 ) : ScheduleEnable {
     @Ignore
     constructor() :this("")

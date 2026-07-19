@@ -73,6 +73,7 @@ import com.creamaker.changli_planet_app.feature.timetable.viewmodel.TimeTableVie
 import com.creamaker.changli_planet_app.widget.dialog.NormalResponseDialog
 import com.creamaker.changli_planet_app.widget.dialog.TimetableWheelBottomDialog
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.tencent.mmkv.MMKV
 import java.time.LocalDate
 import java.time.ZoneId
@@ -95,8 +96,13 @@ class TimeTableActivity : AppCompatActivity() {
 
     private val addCourseLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
+            val coursesJson = result.data?.getStringExtra("newCourses")
             val courseJson = result.data?.getStringExtra("newCourse")
-            courseJson?.let {
+            if (!coursesJson.isNullOrBlank()) {
+                val type = object : TypeToken<List<TimeTableMySubject>>() {}.type
+                val courses = runCatching { Gson().fromJson<List<TimeTableMySubject>>(coursesJson, type) }.getOrNull().orEmpty()
+                viewModel.addCourses(courses)
+            } else courseJson?.let {
                 val course = runCatching {
                     Gson().fromJson(it, TimeTableMySubject::class.java)
                 }.getOrNull()
@@ -164,7 +170,7 @@ class TimeTableActivity : AppCompatActivity() {
 
         LaunchedEffect(responseState) {
             if (responseState is ApiResponse.Error) {
-                errorMessage = "喵呜，被异次元拦截啦！请检查一下网络连接和学期选项哦૮₍˃⤙˂₎ა"
+                errorMessage = "暂时无法加载课表，请检查网络连接或学期选择后重试。"
                 showErrorDialog = true
             }
         }
@@ -193,8 +199,8 @@ class TimeTableActivity : AppCompatActivity() {
             onWeekChange = { week ->
                 viewModel.selectWeek("第${week.coerceIn(1, 20)}周")
             },
-            onEmptySlotClick = { pageWeek, day, startSection ->
-                launchAddCourse(day, startSection, pageWeek, term)
+            onEmptySlotClick = { pageWeek, day, startSection, sectionSpan ->
+                launchAddCourse(day, startSection, sectionSpan, pageWeek, term)
             },
             onCourseClick = {
                 overlapCourses = emptyList()
@@ -206,24 +212,33 @@ class TimeTableActivity : AppCompatActivity() {
                     overlapCourses = coursesInSlot.drop(1)
                 }
             },
-            onCourseLongClick = { course ->
-                if (course.isCustom) {
-                    pendingDeleteCourse = course
-                } else {
-                    showMessage("仅支持删除自定义课程")
-                }
+            onCourseLongClick = {},
+            onCourseMove = { course, dayOfWeek, startSection ->
+                viewModel.moveCourse(course.id, dayOfWeek, startSection, term)
             },
         )
 
         detailCourse?.let { course ->
-            CourseDetailDialog(course = course) {
-                if (overlapCourses.isNotEmpty()) {
-                    detailCourse = overlapCourses.first()
-                    overlapCourses = overlapCourses.drop(1)
+            CourseDetailDialog(
+                course = course,
+                onDelete = if (course.isCustom) {
+                    {
+                        detailCourse = null
+                        overlapCourses = emptyList()
+                        pendingDeleteCourse = course
+                    }
                 } else {
-                    detailCourse = null
-                }
-            }
+                    null
+                },
+                onDismiss = {
+                    if (overlapCourses.isNotEmpty()) {
+                        detailCourse = overlapCourses.first()
+                        overlapCourses = overlapCourses.drop(1)
+                    } else {
+                        detailCourse = null
+                    }
+                },
+            )
         }
 
         pendingDeleteCourse?.let { course ->
@@ -288,11 +303,13 @@ class TimeTableActivity : AppCompatActivity() {
                 textContentColor = AppTheme.colors.secondaryTextColor,
             )
         }
+
     }
 
     @Composable
     private fun CourseDetailDialog(
         course: TimeTableCourseUi,
+        onDelete: (() -> Unit)?,
         onDismiss: () -> Unit,
     ) {
         val dialogBlue = Color(0xFF7DB7E8)
@@ -333,12 +350,26 @@ class TimeTableActivity : AppCompatActivity() {
                             value = "${course.startSection}-${course.startSection + course.sectionSpan - 1}节",
                         )
                         DetailRow(label = "周次", value = formatWeeks(course.weeks))
+                        if (course.credit.isNotBlank()) DetailRow(label = "学分", value = course.credit)
+                        if (course.note.isNotBlank()) DetailRow(label = "备注", value = course.note)
 
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            if (onDelete != null) {
+                                TextButton(onClick = onDelete) {
+                                    Text(
+                                        text = "删除课程",
+                                        color = Color(0xFFE34D59),
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.size(1.dp))
+                            }
                             Button(
                                 onClick = onDismiss,
                                 shape = RoundedCornerShape(8.dp),
@@ -390,10 +421,17 @@ class TimeTableActivity : AppCompatActivity() {
         }
     }
 
-    private fun launchAddCourse(day: Int, startSection: Int, displayWeek: Int, term: String) {
+    private fun launchAddCourse(
+        day: Int,
+        startSection: Int,
+        sectionSpan: Int,
+        displayWeek: Int,
+        term: String,
+    ) {
         val intent = Intent(this, AddCourseActivity::class.java).apply {
             putExtra("day", day)
             putExtra("start", startSection)
+            putExtra("span", sectionSpan)
             putExtra("curWeek", displayWeek)
             putExtra("curTerm", term)
         }
@@ -417,6 +455,14 @@ class TimeTableActivity : AppCompatActivity() {
             when (response) {
                 is ApiResponse.Loading -> Unit
                 is ApiResponse.Success -> showMessage("删除课程成功")
+                is ApiResponse.Error -> showMessage(response.msg)
+            }
+        }
+
+        viewModel.moveCourseResponse.observe(this) { response ->
+            when (response) {
+                is ApiResponse.Loading -> Unit
+                is ApiResponse.Success -> Unit
                 is ApiResponse.Error -> showMessage(response.msg)
             }
         }
@@ -496,7 +542,8 @@ class TimeTableActivity : AppCompatActivity() {
 
             headers += TimeTableDayHeaderUi(
                 weekdayLabel = labels[index],
-                dayOfMonthLabel = "${currentDate.dayOfMonth}日",
+                dayOfMonthLabel = currentDate.dayOfMonth.toString(),
+                fullDateLabel = "${currentDate.year}/${currentDate.monthValue}/${currentDate.dayOfMonth}",
                 isToday = isToday,
             )
         }
@@ -515,6 +562,9 @@ class TimeTableActivity : AppCompatActivity() {
             sectionSpan = step.coerceAtLeast(1),
             weeks = (weeks ?: emptyList()).toSet(),
             isCustom = isCustom,
+            credit = credit,
+            note = note,
+            customColor = customColor,
         )
     }
 

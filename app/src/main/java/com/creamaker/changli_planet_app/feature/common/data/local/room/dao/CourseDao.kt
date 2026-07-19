@@ -31,6 +31,14 @@ interface CourseDao {
     @Query("DELETE FROM courses WHERE id = :courseId AND isCustom = 1")
     fun deleteCustomCourseById(courseId: Int): Int
 
+    @Query("UPDATE courses SET weekday = :weekday, start = :startSection, positionOverridden = 1, positionOverrideKey = :overrideKey WHERE id = :courseId")
+    fun moveCourse(
+        courseId: Int,
+        weekday: Int,
+        startSection: Int,
+        overrideKey: String,
+    ): Int
+
     @Query("DELETE FROM courses WHERE term = :term AND studentId = :studentId AND studentPassword = :studentPassword AND isCustom = 0")
     fun deleteNetworkCoursesByTerm(
         term: String,

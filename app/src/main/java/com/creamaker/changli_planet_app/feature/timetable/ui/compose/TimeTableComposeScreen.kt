@@ -1,10 +1,19 @@
 package com.creamaker.changli_planet_app.feature.timetable.ui.compose
 
 import android.widget.Toast
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -28,6 +37,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,8 +51,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,8 +63,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,34 +76,39 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.creamaker.changli_planet_app.R
 import com.creamaker.changli_planet_app.core.designsystem.PortalBackButton
 import com.creamaker.changli_planet_app.core.theme.AppSkinTheme
 import com.creamaker.changli_planet_app.core.theme.AppTheme
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 
 internal val kCourseCardColors = listOf(
-    Pair(Color(0xFFCDE8FF), Color(0xFF8EC9F5)),
-    Pair(Color(0xFFB8F0CE), Color(0xFF6BDAA0)),
-    Pair(Color(0xFFD8D0FF), Color(0xFFA896F5)),
-    Pair(Color(0xFFFFE7B0), Color(0xFFFFCA60)),
-    Pair(Color(0xFFFFCDD8), Color(0xFFFF9AB8)),
-    Pair(Color(0xFFA8EFEC), Color(0xFF5DD5D0)),
-    Pair(Color(0xFFFFD8B8), Color(0xFFFFAA72)),
-    Pair(Color(0xFFCEF0A8), Color(0xFF8ED460)),
+    Pair(Color(0xFF5B96F5), Color(0xFF4D88EB)),
+    Pair(Color(0xFF51DEC0), Color(0xFF3FCFAF)),
+    Pair(Color(0xFFA77BEA), Color(0xFF9669DC)),
+    Pair(Color(0xFFFFAD3D), Color(0xFFFF9F27)),
+    Pair(Color(0xFFFF4D70), Color(0xFFF43F64)),
+    Pair(Color(0xFF55A9E8), Color(0xFF4598D7)),
+    Pair(Color(0xFFFF8A65), Color(0xFFF57956)),
+    Pair(Color(0xFF74C96A), Color(0xFF62B958)),
 )
-internal val kCourseCardTextColor = Color(0xFF1C2B3A)
+internal val kCourseCardTextColor = Color.White
 
 internal fun courseCardColorPair(courseTitle: String): Pair<Color, Color> =
     kCourseCardColors[courseTitle.hashCode().absoluteValue % kCourseCardColors.size]
 
 private fun generatedCourseColorPair(index: Int): Pair<Color, Color> {
     val hue = ((index * 37) % 360).toFloat()
-    val top = Color.hsl(hue, saturation = 0.52f, lightness = 0.84f)
-    val bottom = Color.hsl(hue, saturation = 0.62f, lightness = 0.70f)
+    val top = Color.hsl(hue, saturation = 0.72f, lightness = 0.62f)
+    val bottom = Color.hsl(hue, saturation = 0.76f, lightness = 0.55f)
     return top to bottom
 }
 
@@ -121,9 +141,18 @@ private fun lerpFloat(start: Float, end: Float, fraction: Float): Float {
 
 @Immutable
 private data class TimetableSizeSpec(
-    val timeColumnWidth: Dp = 48.dp,
-    val cellHeight: Dp = 64.dp,
+    val timeColumnWidth: Dp = 38.dp,
+    val cellHeight: Dp = 88.dp,
 )
+
+@Immutable
+private data class EmptySlotSelection(
+    val dayOfWeek: Int,
+    val startSection: Int,
+    val endSection: Int,
+) {
+    val sectionSpan: Int get() = endSection - startSection + 1
+}
 
 @Composable
 fun TimeTableComposeScreen(
@@ -142,10 +171,11 @@ fun TimeTableComposeScreen(
     onTermClick: () -> Unit,
     onWeekClick: () -> Unit,
     onWeekChange: (Int) -> Unit,
-    onEmptySlotClick: (week: Int, dayOfWeek: Int, startSection: Int) -> Unit,
+    onEmptySlotClick: (week: Int, dayOfWeek: Int, startSection: Int, sectionSpan: Int) -> Unit,
     onCourseClick: (TimeTableCourseUi) -> Unit,
     onOverlapCoursesClick: (List<TimeTableCourseUi>) -> Unit,
     onCourseLongClick: (TimeTableCourseUi) -> Unit,
+    onCourseMove: (TimeTableCourseUi, dayOfWeek: Int, startSection: Int) -> Unit,
 ) {
     val colors = AppTheme.colors
     val sizeSpec = remember { TimetableSizeSpec() }
@@ -207,15 +237,13 @@ fun TimeTableComposeScreen(
             .navigationBarsPadding()
     ) {
         TimeTableTopBar(
+            week = effectiveWeek,
+            dateText = dayHeaders.firstOrNull()?.fullDateLabel.orEmpty(),
+            termText = termText,
             isRefreshing = isRefreshing,
             onBackClick = onBackClick,
             onRefreshClick = onRefreshClick,
-        )
-        TermWeekBar(
-            remark = remark,
-            termText = termText,
-            weekText = "第${effectiveWeek}周",
-            weekBadgeState = weekBadgeState,
+            onAddClick = { onEmptySlotClick(effectiveWeek, 1, 1, 1) },
             onTermClick = onTermClick,
             onWeekClick = onWeekClick,
         )
@@ -230,27 +258,15 @@ fun TimeTableComposeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            contentPadding = PaddingValues(horizontal = 12.dp),
-            pageSpacing = 12.dp,
+            contentPadding = PaddingValues(0.dp),
+            pageSpacing = 0.dp,
         ) { pageIndex ->
             val week = pageIndex + 1
             val pageCourses = coursesByWeek[week].orEmpty()
-            val pageOffset = ((pagerState.currentPage - pageIndex) + pagerState.currentPageOffsetFraction).absoluteValue
-            val motion = (1f - pageOffset.coerceIn(0f, 1f))
-            val cardScale = lerpFloat(0.93f, 1f, motion)
-            val cardAlpha = lerpFloat(0.72f, 1f, motion)
-
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer {
-                        scaleX = cardScale
-                        scaleY = cardScale
-                        alpha = cardAlpha
-                    }
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(colors.bgCardColor.copy(alpha = 0.88f))
-                    .padding(start = 2.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
+                    .background(colors.bgPrimaryColor)
             ) {
                 val scrollState = rememberScrollState()
                 TimeAxisColumn(
@@ -265,13 +281,14 @@ fun TimeTableComposeScreen(
                     cellHeight = sizeSpec.cellHeight,
                     scrollState = scrollState,
                     visibleCourses = pageCourses,
-                    onEmptySlotClick = { dayOfWeek, startSection ->
+                    onEmptySlotClick = { dayOfWeek, startSection, sectionSpan ->
                         val slot = timetableGridSlot(week, dayOfWeek, startSection)
-                        onEmptySlotClick(slot.week, slot.dayOfWeek, slot.startSection)
+                        onEmptySlotClick(slot.week, slot.dayOfWeek, slot.startSection, sectionSpan)
                     },
                     onCourseClick = onCourseClick,
                     onOverlapCoursesClick = onOverlapCoursesClick,
                     onCourseLongClick = onCourseLongClick,
+                    onCourseMove = onCourseMove,
                 )
             }
         }
@@ -280,30 +297,71 @@ fun TimeTableComposeScreen(
 
 @Composable
 private fun TimeTableTopBar(
+    week: Int,
+    dateText: String,
+    termText: String,
     isRefreshing: Boolean,
     onBackClick: () -> Unit,
     onRefreshClick: () -> Unit,
+    onAddClick: () -> Unit,
+    onTermClick: () -> Unit,
+    onWeekClick: () -> Unit,
 ) {
     val colors = AppTheme.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, bottom = 10.dp)
-            .shadow(8.dp, RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
-            .background(colors.bgCardColor)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            .height(48.dp)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PortalBackButton(onClick = onBackClick, tint = colors.titleTopColor)
-        Text(
-            text = "课程表",
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 18.sp,
-            color = colors.titleTopColor,
-        )
+        IconButton(onClick = onBackClick, modifier = Modifier.size(36.dp)) {
+            Icon(Icons.Filled.ArrowBack, contentDescription = "返回", tint = colors.primaryTextColor)
+        }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 4.dp),
+        ) {
+            Text(
+                "第${week}周  周一",
+                modifier = Modifier.clickable(onClick = onWeekClick),
+                fontSize = 19.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = colors.primaryTextColor,
+            )
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClick = onTermClick)
+                    .padding(end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (dateText.isNotBlank()) {
+                    Text(
+                        text = "$dateText  ",
+                        fontSize = 10.sp,
+                        color = colors.secondaryTextColor,
+                        maxLines = 1,
+                    )
+                }
+                Text(
+                    text = "$termText  ▾",
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(colors.titleTopColor.copy(alpha = 0.10f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = colors.titleTopColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        IconButton(onClick = onAddClick, modifier = Modifier.size(36.dp)) {
+            Icon(Icons.Filled.Add, contentDescription = "添加课程", tint = colors.primaryTextColor, modifier = Modifier.size(28.dp))
+        }
         if (isRefreshing) {
             CircularProgressIndicator(
                 modifier = Modifier
@@ -466,43 +524,43 @@ private fun DateHeaderRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 7.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(colors.bgCardColor.copy(alpha = 0.35f))
-            .padding(vertical = 4.dp),
+            .padding(top = 2.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = colors.bgSecondaryColor.copy(alpha = 0.8f),
-        ) {
-            Text(
-                text = monthText,
-                color = colors.primaryTextColor,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .width(timeColumnWidth)
-                    .padding(vertical = 6.dp),
-                textAlign = TextAlign.Center,
-            )
-        }
+        Text(
+            text = monthText.replace("月", "\n月"),
+            color = colors.primaryTextColor,
+            fontSize = 12.sp,
+            lineHeight = 15.sp,
+            modifier = Modifier.width(timeColumnWidth),
+            textAlign = TextAlign.Center,
+        )
         dayHeaders.forEach { header ->
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = header.weekdayLabel,
-                    color = if (header.isToday) colors.textHeighLightColor else colors.primaryTextColor,
+                    text = header.weekdayLabel.removePrefix("周"),
+                    color = if (header.isToday) colors.primaryTextColor else colors.greyTextColor,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                 )
-                Text(
-                    text = header.dayOfMonthLabel,
-                    color = if (header.isToday) colors.textHeighLightColor else colors.greyTextColor,
-                    fontSize = 10.sp,
-                )
+                Surface(
+                    color = if (header.isToday) colors.primaryTextColor else Color.Transparent,
+                    shape = RoundedCornerShape(9.dp),
+                ) {
+                    Text(
+                        text = header.dayOfMonthLabel,
+                        color = if (header.isToday) colors.bgPrimaryColor else colors.greyTextColor,
+                        fontSize = 12.sp,
+                        fontWeight = if (header.isToday) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
             }
         }
     }
@@ -524,28 +582,26 @@ private fun TimeAxisColumn(
 
     Column(modifier = modifier) {
         repeat(TIMETABLE_TOTAL_SECTIONS) { index ->
-            Box(
+            Column(
                 modifier = Modifier
                     .height(cellHeight)
                     .fillMaxWidth()
-                    .padding(horizontal = 2.dp)
-                    .drawBehind {
-                        drawLine(
-                            color = colors.dividerColor.copy(alpha = 0.08f),
-                            start = androidx.compose.ui.geometry.Offset(0f, size.height),
-                            end = androidx.compose.ui.geometry.Offset(size.width, size.height),
-                            strokeWidth = 1f,
-                        )
-                    },
-                contentAlignment = Alignment.Center,
+                    .padding(top = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
+                    text = "${index + 1}",
+                    fontSize = 16.sp,
+                    color = colors.primaryTextColor,
+                    fontWeight = FontWeight.Medium,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
                     text = times[index],
+                    fontSize = 9.sp,
+                    lineHeight = 11.sp,
+                    color = colors.greyTextColor,
                     textAlign = TextAlign.Center,
-                    fontSize = 10.sp,
-                    color = colors.primaryTextColor.copy(alpha = 0.88f),
-                    fontWeight = FontWeight.SemiBold,
-                    lineHeight = 12.sp,
                 )
             }
         }
@@ -558,10 +614,11 @@ private fun TimeTableGrid(
     cellHeight: Dp,
     scrollState: androidx.compose.foundation.ScrollState,
     visibleCourses: List<TimeTableCourseUi>,
-    onEmptySlotClick: (dayOfWeek: Int, startSection: Int) -> Unit,
+    onEmptySlotClick: (dayOfWeek: Int, startSection: Int, sectionSpan: Int) -> Unit,
     onCourseClick: (TimeTableCourseUi) -> Unit,
     onOverlapCoursesClick: (List<TimeTableCourseUi>) -> Unit,
     onCourseLongClick: (TimeTableCourseUi) -> Unit,
+    onCourseMove: (TimeTableCourseUi, dayOfWeek: Int, startSection: Int) -> Unit,
 ) {
     val colors = AppTheme.colors
     val totalHeight = cellHeight * TIMETABLE_TOTAL_SECTIONS
@@ -589,6 +646,11 @@ private fun TimeTableGrid(
         }
         result
     }
+    val emptySelection = remember { mutableStateOf<EmptySlotSelection?>(null) }
+
+    LaunchedEffect(visibleCourses) {
+        emptySelection.value = null
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -605,7 +667,8 @@ private fun TimeTableGrid(
                 .padding(end = 2.dp),
         ) {
             Canvas(modifier = Modifier.matchParentSize()) {
-                val lineColor = colors.dividerColor.copy(alpha = 0.1f)
+                val lineColor = colors.secondaryTextColor.copy(alpha = 0.34f)
+                val dash = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 6.dp.toPx()))
                 val h = size.height
                 val w = size.width
                 val rowHeightPx = cellHeight.toPx()
@@ -617,7 +680,8 @@ private fun TimeTableGrid(
                         lineColor,
                         start = androidx.compose.ui.geometry.Offset(0f, y),
                         end = androidx.compose.ui.geometry.Offset(w, y),
-                        strokeWidth = 0.8f,
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = dash,
                     )
                 }
 
@@ -627,7 +691,8 @@ private fun TimeTableGrid(
                         lineColor,
                         start = androidx.compose.ui.geometry.Offset(x, 0f),
                         end = androidx.compose.ui.geometry.Offset(x, h),
-                        strokeWidth = 0.8f,
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = dash,
                     )
                 }
             }
@@ -641,13 +706,31 @@ private fun TimeTableGrid(
                                     .weight(1f)
                                     .height(cellHeight)
                                     .combinedClickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
                                         onClick = {
                                             val hitCourses =
                                                 cellCoursesMap[day + 1 to section + 1].orEmpty()
                                             when (hitCourses.size) {
-                                                0 -> onEmptySlotClick(day + 1, section + 1)
-                                                1 -> onCourseClick(hitCourses.first())
-                                                else -> onOverlapCoursesClick(hitCourses)
+                                                0 -> {
+                                                    if (emptySelection.value == null) {
+                                                        emptySelection.value = EmptySlotSelection(
+                                                            dayOfWeek = day + 1,
+                                                            startSection = section + 1,
+                                                            endSection = section + 1,
+                                                        )
+                                                    } else {
+                                                        emptySelection.value = null
+                                                    }
+                                                }
+                                                1 -> {
+                                                    emptySelection.value = null
+                                                    onCourseClick(hitCourses.first())
+                                                }
+                                                else -> {
+                                                    emptySelection.value = null
+                                                    onOverlapCoursesClick(hitCourses)
+                                                }
                                             }
                                         },
                                         onLongClick = {
@@ -664,19 +747,139 @@ private fun TimeTableGrid(
                 }
             }
 
+            val courseGestureScope = rememberCoroutineScope()
             visibleCourses.forEach { course ->
                 val x = columnWidth * (course.dayOfWeek - 1)
                 val y = cellHeight * (course.startSection - 1)
                 val cardHeight = cellHeight * course.occupiedSections().count()
+                val columnWidthPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+                    columnWidth.toPx()
+                }
+                val cellHeightPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+                    cellHeight.toPx()
+                }
+                val courseDragOffset = remember(
+                    course.id,
+                    course.dayOfWeek,
+                    course.startSection,
+                ) {
+                    mutableStateOf(androidx.compose.ui.geometry.Offset.Zero)
+                }
+                val courseDragging = remember(course.id) { mutableStateOf(false) }
+                val pendingCourseDragOffset = remember(course.id) {
+                    mutableStateOf(androidx.compose.ui.geometry.Offset.Zero)
+                }
+                val courseDragArmed = remember(course.id) { mutableStateOf(false) }
+                val courseArmJob = remember(course.id) { mutableStateOf<Job?>(null) }
+                val courseScale = animateFloatAsState(
+                    targetValue = if (courseDragArmed.value || courseDragging.value) 0.97f else 1f,
+                    animationSpec = tween(durationMillis = 140),
+                    label = "courseDragScale",
+                )
+                val moveModifier = Modifier
+                        .zIndex(if (courseDragging.value) 5f else 1f)
+                        .graphicsLayer {
+                            translationX = courseDragOffset.value.x
+                            translationY = courseDragOffset.value.y
+                            scaleX = courseScale.value
+                            scaleY = courseScale.value
+                            if (courseDragging.value) {
+                                shadowElevation = 10.dp.toPx()
+                            } else if (courseDragArmed.value) {
+                                shadowElevation = 4.dp.toPx()
+                            }
+                        }
+                        .pointerInput(
+                            course.id,
+                            course.dayOfWeek,
+                            course.startSection,
+                            columnWidthPx,
+                            cellHeightPx,
+                        ) {
+                            val dragActivationDistance = 12.dp.toPx()
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = {
+                                    courseDragArmed.value = false
+                                    pendingCourseDragOffset.value =
+                                        androidx.compose.ui.geometry.Offset.Zero
+                                    courseArmJob.value?.cancel()
+                                    courseArmJob.value = courseGestureScope.launch {
+                                        delay(300L)
+                                        courseDragArmed.value = true
+                                    }
+                                },
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    if (courseDragging.value) {
+                                        courseDragOffset.value += dragAmount
+                                    } else {
+                                        val pending = pendingCourseDragOffset.value + dragAmount
+                                        pendingCourseDragOffset.value = pending
+                                        if (
+                                            courseDragArmed.value &&
+                                            pending.getDistance() >= dragActivationDistance
+                                        ) {
+                                            courseDragging.value = true
+                                            courseDragOffset.value = pending
+                                        }
+                                    }
+                                },
+                                onDragCancel = {
+                                    courseArmJob.value?.cancel()
+                                    courseArmJob.value = null
+                                    courseDragOffset.value = androidx.compose.ui.geometry.Offset.Zero
+                                    pendingCourseDragOffset.value =
+                                        androidx.compose.ui.geometry.Offset.Zero
+                                    courseDragArmed.value = false
+                                    courseDragging.value = false
+                                },
+                                onDragEnd = {
+                                    courseArmJob.value?.cancel()
+                                    courseArmJob.value = null
+                                    val dayDelta =
+                                        (courseDragOffset.value.x / columnWidthPx).roundToInt()
+                                    val sectionDelta =
+                                        (courseDragOffset.value.y / cellHeightPx).roundToInt()
+                                    val targetDay = (course.dayOfWeek + dayDelta)
+                                        .coerceIn(1, TIMETABLE_TOTAL_DAYS)
+                                    val targetStart = (course.startSection + sectionDelta)
+                                        .coerceIn(
+                                            1,
+                                            TIMETABLE_TOTAL_SECTIONS - course.sectionSpan + 1,
+                                        )
+                                    val targetEnd = targetStart + course.sectionSpan - 1
+                                    val targetIsEmpty = (targetStart..targetEnd).all { section ->
+                                        cellCoursesMap[targetDay to section]
+                                            .orEmpty()
+                                            .all { it.id == course.id }
+                                    }
+                                    if (
+                                        targetIsEmpty &&
+                                        (targetDay != course.dayOfWeek || targetStart != course.startSection)
+                                    ) {
+                                        onCourseMove(course, targetDay, targetStart)
+                                    }
+                                    courseDragOffset.value = androidx.compose.ui.geometry.Offset.Zero
+                                    pendingCourseDragOffset.value =
+                                        androidx.compose.ui.geometry.Offset.Zero
+                                    courseDragArmed.value = false
+                                    courseDragging.value = false
+                                },
+                            )
+                        }
 
                 TimeTableCourseCard(
                     course = course,
-                    courseColors = courseColorMap[course.title] ?: courseCardColorPair(course.title),
+                    courseColors = course.customColor?.let {
+                        val selected = Color(it.toULong())
+                        selected.copy(alpha = 0.72f) to selected.copy(alpha = 0.92f)
+                    } ?: courseColorMap[course.title] ?: courseCardColorPair(course.title),
                     modifier = Modifier
                         .offset { IntOffset(x.roundToPx(), y.roundToPx()) }
+                        .then(moveModifier)
                         .width(columnWidth)
                         .height(cardHeight)
-                        .padding(horizontal = 1.5.dp, vertical = 1.5.dp),
+                        .padding(horizontal = 2.dp, vertical = 3.dp),
                     onClick = {
                         val overlaps = courseOverlapMap[course.id].orEmpty()
                         when (overlaps.size) {
@@ -684,11 +887,136 @@ private fun TimeTableGrid(
                             else -> onOverlapCoursesClick(overlaps)
                         }
                     },
-                    onLongClick = {
-                        val overlaps = courseOverlapMap[course.id].orEmpty()
-                        onCourseLongClick(overlaps.firstOrNull() ?: course)
-                    },
                 )
+            }
+
+            emptySelection.value?.let { selection ->
+                val x = columnWidth * (selection.dayOfWeek - 1)
+                val y = cellHeight * (selection.startSection - 1)
+                val selectionHeight = cellHeight * selection.sectionSpan
+                val cellHeightPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+                    cellHeight.toPx()
+                }
+                val columnWidthPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+                    columnWidth.toPx()
+                }
+                val dragDistance = remember(selection.dayOfWeek, selection.startSection) {
+                    mutableFloatStateOf((selection.sectionSpan - 1) * cellHeightPx)
+                }
+                val dragState = rememberDraggableState { delta ->
+                    dragDistance.floatValue =
+                        (dragDistance.floatValue + delta).coerceAtLeast(0f)
+                    val desiredEnd = (
+                        selection.startSection +
+                            (dragDistance.floatValue / cellHeightPx).roundToInt()
+                        ).coerceIn(selection.startSection, TIMETABLE_TOTAL_SECTIONS)
+                    val allowedEnd = (selection.startSection..desiredEnd)
+                        .takeWhile { section ->
+                            cellCoursesMap[selection.dayOfWeek to section].isNullOrEmpty()
+                        }
+                        .lastOrNull()
+                        ?: selection.startSection
+                    emptySelection.value = selection.copy(endSection = allowedEnd)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .offset { IntOffset(x.roundToPx(), y.roundToPx()) }
+                        .width(columnWidth)
+                        .height(selectionHeight)
+                        .padding(horizontal = 2.dp, vertical = 2.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(7.dp))
+                            .background(colors.titleTopColor.copy(alpha = 0.14f))
+                            .border(
+                                width = 1.5.dp,
+                                color = colors.titleTopColor.copy(alpha = 0.72f),
+                                shape = RoundedCornerShape(7.dp),
+                            )
+                            .pointerInput(columnWidthPx, cellHeightPx) {
+                                var origin: EmptySlotSelection? = null
+                                var totalX = 0f
+                                var totalY = 0f
+                                detectDragGestures(
+                                    onDragStart = {
+                                        origin = emptySelection.value
+                                        totalX = 0f
+                                        totalY = 0f
+                                    },
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        totalX += dragAmount.x
+                                        totalY += dragAmount.y
+                                        val base = origin ?: return@detectDragGestures
+                                        val targetDay = (
+                                            base.dayOfWeek + (totalX / columnWidthPx).roundToInt()
+                                            ).coerceIn(1, TIMETABLE_TOTAL_DAYS)
+                                        val targetStart = (
+                                            base.startSection + (totalY / cellHeightPx).roundToInt()
+                                            ).coerceIn(
+                                                1,
+                                                TIMETABLE_TOTAL_SECTIONS - base.sectionSpan + 1,
+                                            )
+                                        val targetEnd = targetStart + base.sectionSpan - 1
+                                        val targetIsEmpty = (targetStart..targetEnd).all { section ->
+                                            cellCoursesMap[targetDay to section].isNullOrEmpty()
+                                        }
+                                        if (targetIsEmpty) {
+                                            emptySelection.value = base.copy(
+                                                dayOfWeek = targetDay,
+                                                startSection = targetStart,
+                                                endSection = targetEnd,
+                                            )
+                                        }
+                                    },
+                                )
+                            },
+                    ) {
+                        Text(
+                            text = if (selection.sectionSpan == 1) {
+                                "第${selection.startSection}节"
+                            } else {
+                                "${selection.startSection}-${selection.endSection}节"
+                            },
+                            modifier = Modifier.align(Alignment.Center),
+                            color = colors.titleTopColor,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = 13.dp)
+                            .size(28.dp)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(colors.titleTopColor)
+                            .draggable(
+                                state = dragState,
+                                orientation = Orientation.Vertical,
+                            )
+                            .clickable {
+                                emptySelection.value = null
+                                onEmptySlotClick(
+                                    selection.dayOfWeek,
+                                    selection.startSection,
+                                    selection.sectionSpan,
+                                )
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "确认添加课程",
+                            tint = colors.bgPrimaryColor,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -700,24 +1028,30 @@ private fun TimeTableCourseCard(
     courseColors: Pair<Color, Color>,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
 ) {
     val (topColor, bottomColor) = courseColors
     val cardBrush = remember(topColor, bottomColor) {
-        Brush.verticalGradient(listOf(topColor, bottomColor))
+        Brush.verticalGradient(
+            listOf(
+                topColor.copy(alpha = 0.86f),
+                bottomColor.copy(alpha = 0.90f),
+            ),
+        )
     }
+    val shape = RoundedCornerShape(6.dp)
 
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            .clip(shape)
+            .border(1.dp, Color.White.copy(alpha = 0.72f), shape)
+            .clickable(onClick = onClick),
         color = Color.Transparent,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(cardBrush)
-                .padding(start = 2.dp, end = 2.dp, top = 13.dp, bottom = 4.dp),
+                .padding(horizontal = 4.dp, vertical = 7.dp),
             verticalArrangement = Arrangement.Top
         ) {
             Text(
@@ -812,23 +1146,24 @@ private fun TimeTableScreenPreview() {
             ),
             dateHeaderProvider = {
                 "3月" to listOf(
-                    TimeTableDayHeaderUi("周一", "03日", false),
-                    TimeTableDayHeaderUi("周二", "04日", false),
-                    TimeTableDayHeaderUi("周三", "05日", true),
-                    TimeTableDayHeaderUi("周四", "06日", false),
-                    TimeTableDayHeaderUi("周五", "07日", false),
-                    TimeTableDayHeaderUi("周六", "08日", false),
-                    TimeTableDayHeaderUi("周日", "09日", false),
+                    TimeTableDayHeaderUi("周一", "03", "2026/3/3", false),
+                    TimeTableDayHeaderUi("周二", "04", "2026/3/4", false),
+                    TimeTableDayHeaderUi("周三", "05", "2026/3/5", true),
+                    TimeTableDayHeaderUi("周四", "06", "2026/3/6", false),
+                    TimeTableDayHeaderUi("周五", "07", "2026/3/7", false),
+                    TimeTableDayHeaderUi("周六", "08", "2026/3/8", false),
+                    TimeTableDayHeaderUi("周日", "09", "2026/3/9", false),
                 )
             },
             onRefreshClick = {},
             onTermClick = {},
             onWeekClick = {},
             onWeekChange = {},
-            onEmptySlotClick = { _, _, _ -> },
+            onEmptySlotClick = { _, _, _, _ -> },
             onCourseClick = {},
             onOverlapCoursesClick = {},
             onCourseLongClick = {},
+            onCourseMove = { _, _, _ -> },
         )
     }
 }

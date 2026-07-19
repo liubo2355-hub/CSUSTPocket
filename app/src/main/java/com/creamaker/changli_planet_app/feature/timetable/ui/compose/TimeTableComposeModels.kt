@@ -6,6 +6,7 @@ import androidx.compose.runtime.Immutable
 data class TimeTableDayHeaderUi(
     val weekdayLabel: String,
     val dayOfMonthLabel: String,
+    val fullDateLabel: String = "",
     val isToday: Boolean,
 )
 
@@ -20,4 +21,7 @@ data class TimeTableCourseUi(
     val sectionSpan: Int,
     val weeks: Set<Int>,
     val isCustom: Boolean,
+    val credit: String = "",
+    val note: String = "",
+    val customColor: Long? = null,
 )

@@ -1,199 +1,86 @@
 package com.creamaker.changli_planet_app.feature.ledger.ui
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.widget.Toast
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.widget.addTextChangedListener
+import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
 import com.creamaker.changli_planet_app.base.FullScreenActivity
 import com.creamaker.changli_planet_app.common.data.local.mmkv.StudentInfoManager
 import com.creamaker.changli_planet_app.core.PlanetApplication
-import com.creamaker.changli_planet_app.core.noOpDelegate
+import com.creamaker.changli_planet_app.core.theme.AppSkinTheme
 import com.creamaker.changli_planet_app.databinding.ActivityAddCourseInTimetableBinding
 import com.creamaker.changli_planet_app.feature.common.data.local.entity.TimeTableMySubject
 import com.creamaker.changli_planet_app.feature.common.data.local.room.database.CoursesDataBase
-import com.creamaker.changli_planet_app.feature.timetable.ui.compose.customCourseSpan
-import com.creamaker.changli_planet_app.widget.dialog.WeekMultiSelectBottomDialog
+import com.creamaker.changli_planet_app.feature.ledger.ui.compose.AddCourseScreen
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-/**
- * 在课表中添加自定义课程类
- */
 class AddCourseActivity : FullScreenActivity<ActivityAddCourseInTimetableBinding>() {
-    lateinit var coursesDataBase: CoursesDataBase
     private val gson by lazy { Gson() }
-    private val courseName by lazy { binding.customCourseName }
-    private val courseRoom by lazy { binding.customCourseRoom }
-    private val courseTeacher by lazy { binding.customTeacherName }
-    private val courseWeekDay by lazy { binding.customWeekAndDay }
-    private val courseWeeks by lazy { binding.customWeeks }
-    private val courseWeeksContainer by lazy { binding.customWeeksContainer }
-    private val courseStep by lazy { binding.customCourseStep }
-    private var curWeek: Int = 0
-    private var selectedWeekDay: Int = 1
-    private var selectedStep: Int = 2
-    private val selectedWeeks = linkedSetOf<Int>()
+    private val database by lazy { CoursesDataBase.getDatabase(PlanetApplication.appContext) }
     private val studentId by lazy { StudentInfoManager.studentId }
     private val studentPassword by lazy { StudentInfoManager.studentPassword }
-    private val weekDayMap = mapOf(
-        1 to "周一",
-        2 to "周二",
-        3 to "周三",
-        4 to "周四",
-        5 to "周五",
-        6 to "周六",
-        7 to "周日"
-    )
 
-    override fun createViewBinding(): ActivityAddCourseInTimetableBinding = ActivityAddCourseInTimetableBinding.inflate(layoutInflater)
+    override fun createViewBinding(): ActivityAddCourseInTimetableBinding =
+        ActivityAddCourseInTimetableBinding.inflate(layoutInflater)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        coursesDataBase = CoursesDataBase.getDatabase(PlanetApplication.appContext)
-        initView()
-        initListener()
-    }
+        val start = intent.getIntExtra("start", 1).coerceIn(1, 10)
+        val span = intent.getIntExtra("span", 1).coerceIn(1, 11 - start)
+        val week = intent.getIntExtra("curWeek", 1).coerceIn(1, 20)
+        val day = intent.getIntExtra("day", 1).coerceIn(1, 7)
+        val term = intent.getStringExtra("curTerm").orEmpty()
 
-    @SuppressLint("SetTextI18n")
-    private fun initView() {
-        setContentView(binding.root)
-        supportActionBar?.hide()
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        val startCourse = intent.getIntExtra("start", 0)
-        selectedStep = customCourseSpan(startCourse)
-        curWeek = intent.getIntExtra("curWeek", 1).coerceIn(1, 20)
-        selectedWeekDay = intent.getIntExtra("day", 1).coerceIn(1, 7)
-        selectedWeeks.clear()
-        selectedWeeks.add(curWeek)
-        val endCourse = startCourse + selectedStep - 1
-        courseStep.text = "%02d - %02d 节".format(startCourse, endCourse)
-        courseWeekDay.text = weekDayMap[selectedWeekDay]
-        refreshSelectedWeeksText()
-
-        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar){view,windowInsets->
-            val insets=windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(
-                view.paddingLeft,
-                insets.top,
-                view.paddingRight,
-                view.paddingBottom
-            )
-            WindowInsetsCompat.CONSUMED
-        }
-    }
-
-    private fun initListener() {
-        binding.customCourseName.addTextChangedListener {
-            object : TextWatcher by noOpDelegate() {
-                override fun afterTextChanged(s: Editable?) {
-                    lifecycleScope.launch {
-                        courseName.setText(it.toString())
-                    }
+        lifecycleScope.launch {
+            val suggestions = withContext(Dispatchers.IO) {
+                database.courseDao().getCoursesByTerm(term, studentId, studentPassword)
+                    .map { it.courseName.trim() }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+                    .take(12)
+            }
+            setContent {
+                AppSkinTheme {
+                    AddCourseScreen(
+                        initialWeek = week,
+                        initialDay = day,
+                        initialStartSection = start,
+                        initialSpan = span,
+                        courseSuggestions = suggestions,
+                        onBack = { finish() },
+                        onSave = { draft ->
+                            if (draft.courseName.isBlank()) {
+                                Toast.makeText(this@AddCourseActivity, "请输入课程名称", Toast.LENGTH_SHORT).show()
+                                return@AddCourseScreen
+                            }
+                            val courses = draft.timeSlots.map { slot ->
+                                TimeTableMySubject(
+                                    courseName = draft.courseName.trim(),
+                                    classroom = draft.room.trim(),
+                                    teacher = draft.teacher.trim(),
+                                    weeks = slot.weeks.sorted(),
+                                    start = slot.startSection,
+                                    step = slot.sectionSpan,
+                                    weekday = slot.dayOfWeek,
+                                    isCustom = true,
+                                    term = term,
+                                    studentId = studentId,
+                                    studentPassword = studentPassword,
+                                    credit = draft.credit.trim(),
+                                    note = draft.note.trim(),
+                                    customColor = draft.colorValue,
+                                )
+                            }
+                            setResult(RESULT_OK, Intent().putExtra("newCourses", gson.toJson(courses)))
+                            finish()
+                        },
+                    )
                 }
             }
-        }
-        binding.customCourseRoom.addTextChangedListener {
-            object : TextWatcher by noOpDelegate() {
-                override fun afterTextChanged(s: Editable?) {
-                    lifecycleScope.launch {
-                        courseRoom.setText(it.toString())
-                    }
-                }
-            }
-        }
-        binding.customTeacherName.addTextChangedListener {
-            object : TextWatcher by noOpDelegate() {
-                override fun afterTextChanged(s: Editable?) {
-                    lifecycleScope.launch {
-                        courseTeacher.setText(it.toString())
-                    }
-                }
-            }
-        }
-
-        courseWeeksContainer.setOnClickListener {
-            showWeekSelectorDialog()
-        }
-        courseWeeks.setOnClickListener { showWeekSelectorDialog() }
-
-        binding.addCourseBtn.setOnClickListener {
-            val mySubject =
-                TimeTableMySubject(isCustom = true, studentId = studentId, studentPassword = studentPassword)
-            if (courseName.text.isNotEmpty()) {
-                mySubject.courseName = courseName.text.toString()
-            } else {
-                Toast.makeText(this, "请输入课程名", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            mySubject.apply {
-                term = intent.getStringExtra("curTerm")!!
-                weekday = intent.getIntExtra("day", 0) // 底层的索引从0开始，但计算时却进行了 - 1 ，所以这里要 + 1
-                start = intent.getIntExtra("start", 0)
-            }
-            mySubject.step = selectedStep
-            if (courseTeacher.text.isNotEmpty()) {
-                mySubject.teacher = courseTeacher.text.toString()
-            } else {
-                Toast.makeText(this, "请输入老师名", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (courseRoom.text.isNotEmpty()) {
-                mySubject.classroom = courseRoom.text.toString()
-            } else {
-                Toast.makeText(this, "请输入教室名", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (selectedWeeks.isEmpty()) {
-                Toast.makeText(this, "请选择周次", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            mySubject.weeks = selectedWeeks.toList().sorted()
-            val intent = Intent().apply {
-                putExtra("newCourse", gson.toJson(mySubject))
-            }
-            setResult(RESULT_OK, intent)
-            finish()
-        }
-        binding.backBtn.setOnClickListener {
-            val intent = Intent()
-            setResult(RESULT_OK, intent)
-            finish()
-        }
-    }
-
-    private fun showWeekSelectorDialog() {
-        val dialog = WeekMultiSelectBottomDialog(selectedWeeks.toSet()) { chosenWeeks ->
-            selectedWeeks.clear()
-            selectedWeeks.addAll(chosenWeeks.sorted())
-            refreshSelectedWeeksText()
-        }
-        dialog.show(supportFragmentManager, "WeekMultiSelectBottomDialog")
-    }
-
-    private fun refreshSelectedWeeksText() {
-        courseWeeks.text = formatWeeks(selectedWeeks)
-    }
-
-    private fun formatWeeks(weeks: Set<Int>): String {
-        if (weeks.isEmpty()) return "未选择周次"
-        val sorted = weeks.sorted()
-        val first = sorted.first()
-        val last = sorted.last()
-        val full = (first..last).toList()
-        return when {
-            sorted.size == 1 -> "${sorted.first()}周"
-            sorted == full -> "$first-${last}周"
-            sorted == full.filter { it % 2 == 0 } -> "$first-${last}周(双周)"
-            sorted == full.filter { it % 2 != 0 } -> "$first-${last}周(单周)"
-            else -> sorted.joinToString(",") + "周"
         }
     }
 }

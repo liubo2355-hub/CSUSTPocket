@@ -11,7 +11,7 @@ import com.creamaker.changli_planet_app.feature.common.data.local.entity.TimeTab
 import com.creamaker.changli_planet_app.feature.common.data.local.room.converter.WeeksTypeConverter
 import com.creamaker.changli_planet_app.feature.common.data.local.room.dao.CourseDao
 
-@Database(entities = [TimeTableMySubject::class], version = 11, exportSchema = true)
+@Database(entities = [TimeTableMySubject::class], version = 13, exportSchema = true)
 @TypeConverters(WeeksTypeConverter::class)
 abstract class CoursesDataBase : RoomDatabase() {
     abstract fun courseDao(): CourseDao
@@ -26,6 +26,8 @@ abstract class CoursesDataBase : RoomDatabase() {
                 "course_database"
             )
                 .addMigrations(MIGRATION_10_11)
+                .addMigrations(MIGRATION_11_12)
+                .addMigrations(MIGRATION_12_13)
                 .build()
             INSTANCE = instance
             instance
@@ -42,6 +44,25 @@ abstract class CoursesDataBase : RoomDatabase() {
                     `index_courses_courseName_classroom_teacher_weeks_start_step_weekday_term_studentId_studentPassword`
                     ON `courses` (`courseName`, `classroom`, `teacher`, `weeks`, `start`, `step`, `weekday`, `term`, `studentId`, `studentPassword`)
                     """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE courses ADD COLUMN credit TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE courses ADD COLUMN note TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE courses ADD COLUMN customColor INTEGER DEFAULT NULL")
+            }
+        }
+
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE courses ADD COLUMN positionOverridden INTEGER NOT NULL DEFAULT 0"
+                )
+                db.execSQL(
+                    "ALTER TABLE courses ADD COLUMN positionOverrideKey TEXT NOT NULL DEFAULT ''"
                 )
             }
         }
