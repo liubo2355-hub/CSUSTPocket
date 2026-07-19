@@ -1,6 +1,6 @@
 # 掌上长理
 
-“掌上长理”基于 CreaMakers 的校园产品体系重构：Android 客户端沿用 `CSUSTPocket` 的业务能力，通过其既有依赖接入 `CSUSTDataGet` 获取教务数据，并继续兼容 `changli-planet-backend` 提供的用户、工具与 Web 服务。
+掌上长理 Android 客户端是面向长沙理工大学师生的校园工具应用，聚焦教务、课程、考试、成绩、宿舍电量与校园服务，并支持 Android 桌面小组件。
 
 ## 新的信息架构
 
