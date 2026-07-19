@@ -564,14 +564,23 @@ private fun HomeMetricCard(
                     Text(" ${metric?.unit}", color = colors.secondaryTextColor, fontSize = 10.sp, modifier = Modifier.padding(bottom = 5.dp))
                 }
             }
-            Text(
-                metric?.subtitle ?: "数据同步后显示",
-                color = colors.secondaryTextColor,
-                fontSize = 10.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(Modifier.weight(1f))
+             Text(
+                 metric?.subtitle ?: "数据同步后显示",
+                 color = colors.secondaryTextColor,
+                 fontSize = 10.sp,
+                 maxLines = 1,
+                 overflow = TextOverflow.Ellipsis
+             )
+             if (!metric?.badgeText.isNullOrBlank()) {
+                 Text(
+                     metric!!.badgeText,
+                     color = accent.copy(alpha = 0.7f),
+                     fontSize = 9.sp,
+                     fontWeight = FontWeight.Medium,
+                     modifier = Modifier.padding(start = 4.dp)
+                 )
+             }
+             Spacer(Modifier.weight(1f))
             HomeMiniTrend(values = metric?.trendValues.orEmpty(), accent = accent)
         }
     }

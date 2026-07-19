@@ -271,7 +271,10 @@ class OverviewRepository(
             0.0
         }
 
-        val electricitySubtitle = buildElectricitySubtitle(electricitySnapshot, isElectricityBound)
+        val electricityEstimate = if (isElectricityBound && electricitySnapshot != null) {
+            estimateElectricityDays(electricitySnapshot.history, electricitySnapshot.lastValue.toDouble())
+        } else null
+        val electricitySubtitle = buildElectricitySubtitle(electricitySnapshot, isElectricityBound, electricityEstimate)
         val electricityUpdatedAt = buildElectricityUpdatedAt(electricitySnapshot)
         val semesterGpaTrend = grades
             .filter { it.item.isNotBlank() }
@@ -310,7 +313,7 @@ class OverviewRepository(
                 iconRes = R.drawable.ic_bill,
                 accentColor = Color(0xFF62C466),
                 trendValues = electricityTrend,
-                badgeText = electricityRepository.getBinding()?.room.orEmpty()
+                badgeText = electricityEstimate?.let { "置信" + it.confidence + "%" } ?: ""
             )
         )
     }
@@ -335,64 +338,123 @@ class OverviewRepository(
             }
     }
 
-    private fun buildElectricitySubtitle(snapshot: ElectricitySnapshot?, isBound: Boolean): String {
+    private fun buildElectricitySubtitle(
+        snapshot: ElectricitySnapshot?,
+        isBound: Boolean,
+        estimate: ElectricityEstimate?
+    ): String {
         if (!isBound) return "去绑定电费"
         if (snapshot == null) return "还没有电费缓存"
-        val estimate = estimateElectricityDays(snapshot.history, snapshot.lastValue.toDouble())
-        if (estimate != null) {
-            return "按近期用电，约${estimate}天后耗尽"
+        if (estimate == null) return "暂无预测数据"
+        val days = estimate.days
+        val prefix = when {
+            estimate.isStale -> "数据较旧"
+            estimate.recentTrendUp -> "用电增加"
+            else -> "预计"
         }
-        return "按近期用电，暂时无法稳定估算"
+        return prefix + "约" + days + "天后耗尽"
     }
 
     private fun buildElectricityUpdatedAt(snapshot: ElectricitySnapshot?): String {
         if (snapshot == null) return ""
-        return "更新于 ${SimpleDateFormat("MM-dd HH:mm", Locale.CHINA).format(Date(snapshot.lastTime))}"
-    }
+        return "更新于 " + SimpleDateFormat("MM-dd HH:mm", Locale.CHINA).format(Date(snapshot.lastTime))
+    }    private data class ElectricityEstimate(
+        val days: Int,
+        val confidence: Int,
+        val isStale: Boolean,
+        val recentTrendUp: Boolean
+    )
 
     private fun estimateElectricityDays(
         history: List<ElectricityHistoryEntry>,
         currentValue: Double
-    ): Int? {
-        if (history.size < 3 || currentValue <= 0.0) return null
-
+    ): ElectricityEstimate? {
+        if (history.size < 2 || currentValue <= 0.0) return null
         val now = System.currentTimeMillis()
-        val recentHistory = history
+        val sortedHistory = history
             .sortedBy { it.timestamp }
-            .filter { now - it.timestamp <= TimeUnit.DAYS.toMillis(21) }
-            .takeLast(12)
-
-        if (recentHistory.size < 3) return null
-
-        val dailyRates = recentHistory.zipWithNext()
-            .mapNotNull { (previous, current) ->
-                val deltaHours = (current.timestamp - previous.timestamp).toDouble() / TimeUnit.HOURS.toMillis(1)
-                val deltaValue = previous.value - current.value
-                when {
-                    deltaHours !in 1.0..96.0 -> null
-                    deltaValue <= 0.05f -> null
-                    else -> UsageRate(
-                        dailyUsage = deltaValue / deltaHours * 24.0,
-                        weight = (deltaHours.coerceAtMost(24.0) / 24.0).coerceAtLeast(0.2)
-                    )
+            .filter { now - it.timestamp <= TimeUnit.DAYS.toMillis(30) }
+            .takeLast(20)
+        if (sortedHistory.size < 2) return null
+        val allRates = sortedHistory.zipWithNext().mapNotNull { (prev, curr) ->
+            val deltaHours = (curr.timestamp - prev.timestamp).toDouble() / TimeUnit.HOURS.toMillis(1)
+            val deltaValue = prev.value - curr.value
+            when {
+                deltaHours < 0.5 -> null
+                deltaHours > 168.0 -> null
+                deltaValue <= 0.0f -> null
+                deltaValue < 0.02f -> null
+                else -> {
+                    val dailyUsage = deltaValue / deltaHours * 24.0
+                    val daysAgo = (now - prev.timestamp).toDouble() / TimeUnit.DAYS.toMillis(1)
+                    val recencyWeight = Math.pow(0.5, daysAgo / 7.0)
+                    val intervalWeight = (deltaHours.coerceAtMost(48.0) / 24.0).coerceIn(0.3, 2.0)
+                    UsageRate(dailyUsage, recencyWeight * intervalWeight)
                 }
             }
-
-        if (dailyRates.size < 2) return null
-
-        val medianRate = dailyRates.map { it.dailyUsage }.sorted().let { sorted ->
-            val mid = sorted.size / 2
-            if (sorted.size % 2 == 0) (sorted[mid - 1] + sorted[mid]) / 2.0 else sorted[mid]
         }
-        val filteredRates = dailyRates.filter {
-            abs(it.dailyUsage - medianRate) <= maxOf(0.5, medianRate * 0.4)
+        if (allRates.isEmpty()) return null
+        val effectiveRates = when {
+            allRates.size >= 8 -> {
+                val sorted = allRates.map { it.dailyUsage }.sorted()
+                val q1 = sorted[sorted.size / 4]
+                val q3 = sorted[sorted.size * 3 / 4]
+                val iqr = (q3 - q1).coerceAtLeast(0.1)
+                val filtered = allRates.filter {
+                    it.dailyUsage in (q1 - 1.5 * iqr)..(q3 + 1.5 * iqr)
+                }
+                if (filtered.isEmpty()) allRates else filtered
+            }
+            allRates.size >= 4 -> {
+                val sorted = allRates.map { it.dailyUsage }.sorted()
+                val q1 = sorted[sorted.size / 4]
+                val q3 = sorted[sorted.size * 3 / 4]
+                val iqr = (q3 - q1).coerceAtLeast(0.1)
+                val filtered = allRates.filter {
+                    it.dailyUsage in (q1 - 2.0 * iqr)..(q3 + 2.0 * iqr)
+                }
+                if (filtered.isEmpty()) allRates else filtered
+            }
+            else -> allRates
         }
-        if (filteredRates.isEmpty()) return null
-
-        val weightedUsage = filteredRates.sumOf { it.dailyUsage * it.weight } / filteredRates.sumOf { it.weight }
-        if (weightedUsage !in 0.5..20.0) return null
-
-        return kotlin.math.ceil(currentValue / weightedUsage).toInt().coerceAtLeast(1)
+        val totalWeight = effectiveRates.sumOf { it.weight }
+        var finalUsage = effectiveRates.sumOf { it.dailyUsage * it.weight } / totalWeight
+        val recentRates = effectiveRates.takeLast(3)
+        var recentTrendUp = false
+        if (recentRates.size >= 2) {
+            val recentAvg = recentRates.map { it.dailyUsage }.average()
+            if (recentAvg > finalUsage * 1.5 && recentAvg > 0.1) {
+                recentTrendUp = true
+                finalUsage = recentAvg
+            }
+        }
+       if (finalUsage <= 0.0) return null
+       val lastReadingTime = sortedHistory.lastOrNull()?.timestamp ?: 0L
+       val isStale = now - lastReadingTime > TimeUnit.DAYS.toMillis(3)
+       // Confidence: 4-factor continuous model (0-100, coerced to 10-95)
+       // 1. Data quantity (0-35): each rate adds ~4.4 pts, capped at 8+ rates
+       val dataScore = (effectiveRates.size * 4.4).coerceAtMost(35.0)
+       // 2. Consistency (0-30): lower coefficient of variation = higher score
+       val meanUsage = effectiveRates.map { it.dailyUsage }.average()
+       val variance = effectiveRates.map { Math.pow(it.dailyUsage - meanUsage, 2.0) }.average()
+       val cv = if (meanUsage > 0) Math.sqrt(variance) / meanUsage else 1.0
+       val consistencyScore = (1.0 - cv.coerceIn(0.0, 1.0)) * 30.0
+       // 3. Freshness (0-20): continuous decay, 0h=20, 24h~12, 48h~5, 67h=0
+       val hoursSinceLast = (now - lastReadingTime) / 3_600_000.0
+       val freshnessScore = (20.0 - hoursSinceLast * 0.3).coerceAtLeast(0.0)
+       // 4. Time coverage (0-15): data spanning more days = higher score
+       val dataSpanHours = if (sortedHistory.size >= 2) {
+           (sortedHistory.last().timestamp - sortedHistory.first().timestamp) / 3_600_000.0
+       } else 0.0
+       val coverageScore = (dataSpanHours / 24.0 * 2.0).coerceAtMost(15.0)
+       val confidence = (dataScore + consistencyScore + freshnessScore + coverageScore).toInt().coerceIn(10, 95)
+       val days = kotlin.math.ceil(currentValue / finalUsage).toInt().coerceAtLeast(1)
+       return ElectricityEstimate(
+           days = days.coerceAtMost(365),
+           confidence = confidence,
+           isStale = isStale,
+           recentTrendUp = recentTrendUp
+       )
     }
 
     private fun hasElectricityBinding(): Boolean {
