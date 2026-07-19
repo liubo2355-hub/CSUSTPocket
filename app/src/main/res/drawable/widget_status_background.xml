@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS 风格状态徽章：胶囊形 + 极浅蓝底 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/widget_pill_blue_bg" />
+    <corners android:radius="10dp" />
+</shape>

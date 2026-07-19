@@ -39,4 +39,49 @@
 
     <color name="app_blue1">#1697D5</color>
     <color name="app_red">#d81e06</color>
+
+    <!-- ====================== 小组件专用（iOS 风格） ====================== -->
+    <!-- 小组件卡片专用背景：纯净白底 -->
+    <color name="widget_surface">#FFFFFFFF</color>
+    <!-- 小组件卡片分隔线 -->
+    <color name="widget_divider">#1A000000</color>
+    <color name="widget_divider_subtle">#0D000000</color>
+    <!-- 倒计时色条（红/橙/绿三档） -->
+    <color name="widget_strip_red">#E53935</color>
+    <color name="widget_strip_orange">#FB8C00</color>
+    <color name="widget_strip_yellow">#FBC02D</color>
+    <color name="widget_strip_green">#43A047</color>
+    <color name="widget_strip_blue">#1E88E5</color>
+    <color name="widget_strip_purple">#8E24AA</color>
+    <color name="widget_strip_teal">#00897B</color>
+    <color name="widget_strip_pink">#D81B60</color>
+    <!-- 倒计时徽章背景 -->
+    <color name="widget_pill_red_bg">#FFEBEE</color>
+    <color name="widget_pill_red_text">#C62828</color>
+    <color name="widget_pill_orange_bg">#FFF3E0</color>
+    <color name="widget_pill_orange_text">#E65100</color>
+    <color name="widget_pill_green_bg">#E8F5E9</color>
+    <color name="widget_pill_green_text">#2E7D32</color>
+    <color name="widget_pill_blue_bg">#E3F2FD</color>
+    <color name="widget_pill_blue_text">#1565C0</color>
+    <color name="widget_pill_grey_bg">#F1F3F5</color>
+    <color name="widget_pill_grey_text">#546E7A</color>
+    <!-- 图表色 -->
+    <color name="widget_chart_line">#1697D5</color>
+    <color name="widget_chart_fill_start">#551697D5</color>
+    <color name="widget_chart_fill_end">#001697D5</color>
+    <color name="widget_chart_grid">#1A000000</color>
+    <color name="widget_chart_axis_text">#8A8E94</color>
+    <!-- 成绩分布柱状色（绿-黄-橙-红渐变） -->
+    <color name="widget_bar_excellent">#43A047</color>
+    <color name="widget_bar_good">#7CB342</color>
+    <color name="widget_bar_average">#FBC02D</color>
+    <color name="widget_bar_pass">#FB8C00</color>
+    <color name="widget_bar_fail">#E53935</color>
+    <!-- 小组件标题/内容/辅助文字 -->
+    <color name="widget_title">#1A1A1A</color>
+    <color name="widget_subtitle">#6B7280</color>
+    <color name="widget_body">#1F2937</color>
+    <color name="widget_meta">#6B7280</color>
+    <color name="widget_indicator">#1697D5</color>
 </resources>

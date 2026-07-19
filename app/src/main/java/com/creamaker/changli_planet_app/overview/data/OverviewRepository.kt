@@ -95,6 +95,11 @@ class OverviewRepository(
         loadLocalState()
     }
 
+    /** Refreshes only timetable data for lightweight desktop-widget updates. */
+    suspend fun refreshCoursesOnly(): Boolean = withContext(Dispatchers.IO) {
+        fetchCourses(getCurrentTerm()) != null
+    }
+
     private suspend fun buildState(
         courses: List<TimeTableMySubject>,
         grades: List<Grade>,

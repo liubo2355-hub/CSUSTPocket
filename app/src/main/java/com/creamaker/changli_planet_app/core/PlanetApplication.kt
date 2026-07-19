@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import com.creamaker.changli_planet_app.BuildConfig
+import com.creamaker.changli_planet_app.WidgetUpdateManager
 import com.creamaker.changli_planet_app.core.network.OkHttpHelper
 import com.creamaker.changli_planet_app.core.theme.ThemeModeManager
 import com.creamaker.changli_planet_app.feature.common.data.local.room.database.CoursesDataBase
@@ -108,6 +109,7 @@ class PlanetApplication : Application(), ViewModelStoreOwner {
                 .commit()
             CoursesDataBase.getDatabase(appContext).courseDao().clearAllCourses()
             runCatching { MoocRepository.instance.clearMoocLocalSession() }
+            WidgetUpdateManager.updateAll(appContext)
         }
 
         fun clearContentCache() {

@@ -48,4 +48,42 @@
     <color name="app_red">#D81E06</color>
 
     <color name="color_neum_highlight">#2A2D33</color>
+
+    <!-- ====================== 小组件专用（iOS 风格 · 深色） ====================== -->
+    <color name="widget_surface">#1F2125</color>
+    <color name="widget_divider">#1AFFFFFF</color>
+    <color name="widget_divider_subtle">#0DFFFFFF</color>
+    <color name="widget_strip_red">#EF5350</color>
+    <color name="widget_strip_orange">#FFA726</color>
+    <color name="widget_strip_yellow">#FFCA28</color>
+    <color name="widget_strip_green">#66BB6A</color>
+    <color name="widget_strip_blue">#42A5F5</color>
+    <color name="widget_strip_purple">#AB47BC</color>
+    <color name="widget_strip_teal">#26A69A</color>
+    <color name="widget_strip_pink">#EC407A</color>
+    <color name="widget_pill_red_bg">#3D1F1F</color>
+    <color name="widget_pill_red_text">#FF8A80</color>
+    <color name="widget_pill_orange_bg">#3D2A18</color>
+    <color name="widget_pill_orange_text">#FFAB66</color>
+    <color name="widget_pill_green_bg">#1F2D20</color>
+    <color name="widget_pill_green_text">#A5D6A7</color>
+    <color name="widget_pill_blue_bg">#1A2533</color>
+    <color name="widget_pill_blue_text">#90CAF9</color>
+    <color name="widget_pill_grey_bg">#262A30</color>
+    <color name="widget_pill_grey_text">#B0BEC5</color>
+    <color name="widget_chart_line">#7CC2FF</color>
+    <color name="widget_chart_fill_start">#557CC2FF</color>
+    <color name="widget_chart_fill_end">#007CC2FF</color>
+    <color name="widget_chart_grid">#1AFFFFFF</color>
+    <color name="widget_chart_axis_text">#90A4AE</color>
+    <color name="widget_bar_excellent">#66BB6A</color>
+    <color name="widget_bar_good">#9CCC65</color>
+    <color name="widget_bar_average">#FFCA28</color>
+    <color name="widget_bar_pass">#FFA726</color>
+    <color name="widget_bar_fail">#EF5350</color>
+    <color name="widget_title">#F5F7FA</color>
+    <color name="widget_subtitle">#9CA3AF</color>
+    <color name="widget_body">#E5E7EB</color>
+    <color name="widget_meta">#9CA3AF</color>
+    <color name="widget_indicator">#7CC2FF</color>
 </resources>

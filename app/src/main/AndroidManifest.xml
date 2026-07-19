@@ -71,7 +71,8 @@
 
         <receiver
             android:name=".TimeTableAppWidget"
-            android:exported="false">
+            android:exported="true"
+            android:label="@string/widget_timetable_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -84,7 +85,8 @@
 
         <receiver
             android:name=".ElectronicAppWidget"
-            android:exported="false">
+            android:exported="true"
+            android:label="@string/widget_electricity_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -92,6 +94,30 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/electronic_app_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".ExamAppWidget"
+            android:exported="true"
+            android:label="@string/widget_exam_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/exam_app_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".GradeAppWidget"
+            android:exported="true"
+            android:label="@string/widget_grade_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/grade_app_widget_info" />
         </receiver>
 
         <service

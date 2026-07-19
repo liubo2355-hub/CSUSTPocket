@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creamaker.changli_planet_app.common.cache.CommonInfo
+import com.creamaker.changli_planet_app.WidgetUpdateManager
 import com.creamaker.changli_planet_app.common.data.local.mmkv.StudentInfoManager
 import com.creamaker.changli_planet_app.core.PlanetApplication
 import com.creamaker.changli_planet_app.core.network.ApiResponse
@@ -151,6 +152,7 @@ class TimeTableViewModel : ViewModel() {
                         withContext(Dispatchers.Main) {
                             updateUiState(allLocalCourses.toMutableList(), term, remark)
                         }
+                        WidgetUpdateManager.updateTimetable(PlanetApplication.appContext)
                         _coursesResponse.tryEmit(ApiResponse.Success(allLocalCourses))
                     }
 
@@ -220,6 +222,7 @@ class TimeTableViewModel : ViewModel() {
                 }
 
                 updateUiState(updatedSubjects, currentState.term)
+                WidgetUpdateManager.updateTimetable(PlanetApplication.appContext)
                 _addCourseResponse.value = ApiResponse.Success(Unit)
 
             } catch (e: Exception) {
