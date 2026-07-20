@@ -60,8 +60,8 @@ android {
         applicationId = "com.creamaker.pocket_csust"
         minSdk = 24
         targetSdk = 36
-        versionCode = 60
-        versionName = "2.0.38"
+        versionCode = 61
+        versionName = "2.0.39"
         val amapKeyFromLocal: String = localProperties.getProperty("amap.apiKey")
             ?: System.getenv("AMAP_API_KEY")
             ?: ""
@@ -82,8 +82,8 @@ android {
     }
 
     buildTypes {
-        debug {
-            buildConfigField(
+       debug {
+           buildConfigField(
                 "String",
                 "PLANET_API_BASE_URL",
                 "\"$planetApiBaseUrlDebug\""
@@ -96,7 +96,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("debug")
             buildConfigField(
                 "String",
                 "PLANET_API_BASE_URL",
