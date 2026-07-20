@@ -20,3 +20,7 @@ replay_pid*.log
 /service.xml
 /service2.xml
 /window.xml
+
+# Local-only handoff doc and signing keys - never commit
+HANDOFF.md
+*.jks
