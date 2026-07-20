@@ -1,6 +1,6 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="Base.Theme.Changliplanetapp" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.CsustPocket" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
         <item name="colorPrimary">@color/color_primary_blue</item>
@@ -10,9 +10,9 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <style name="Theme.Changliplanetapp" parent="Base.Theme.Changliplanetapp"></style>
+    <style name="Theme.CsustPocket" parent="Base.Theme.CsustPocket"></style>
 
-    <style name="Theme.Changliplanetapp.AppWidgetContainerParent" parent="@android:style/Theme.DeviceDefault">
+    <style name="Theme.CsustPocket.AppWidgetContainerParent" parent="@android:style/Theme.DeviceDefault">
         <!-- Radius of the outer bound of widgets to make the rounded corners -->
         <item name="appWidgetRadius">16dp</item>
         <!--
@@ -22,7 +22,7 @@
         <item name="appWidgetInnerRadius">8dp</item>
     </style>
 
-    <style name="Theme.Changliplanetapp.AppWidgetContainer" parent="Theme.Changliplanetapp.AppWidgetContainerParent">
+    <style name="Theme.CsustPocket.AppWidgetContainer" parent="Theme.CsustPocket.AppWidgetContainerParent">
         <!-- Apply padding to avoid the content of the widget colliding with the rounded corners -->
         <item name="appWidgetPadding">7dp</item>
     </style>

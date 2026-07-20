@@ -35,7 +35,7 @@
         android:networkSecurityConfig="@xml/netconfig"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Changliplanetapp"
+        android:theme="@style/Theme.CsustPocket"
         android:usesCleartextTraffic="true"
         tools:replace="android:networkSecurityConfig"
         tools:targetApi="31">
