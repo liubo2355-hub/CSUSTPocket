@@ -8,10 +8,10 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.DateRange
-import androidx.compose.material.icons.outlined.EventNote
-import androidx.compose.material.icons.outlined.FactCheck
+import androidx.compose.material.icons.automirrored.outlined.EventNote
+import androidx.compose.material.icons.automirrored.outlined.FactCheck
 import androidx.compose.material.icons.outlined.Insights
-import androidx.compose.material.icons.outlined.LibraryBooks
+import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material.icons.outlined.RateReview
@@ -24,10 +24,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 /** 服务入口统一使用同一套 Material Outlined 线性图标。 */
 fun functionIcon(destination: FunctionDestination): ImageVector = when (destination) {
     FunctionDestination.Timetable -> Icons.Outlined.CalendarMonth
-    FunctionDestination.ScoreInquiry -> Icons.Outlined.FactCheck
-    FunctionDestination.ExamArrangement -> Icons.Outlined.EventNote
+    FunctionDestination.ScoreInquiry -> Icons.AutoMirrored.Outlined.FactCheck
+    FunctionDestination.ExamArrangement -> Icons.AutoMirrored.Outlined.EventNote
     FunctionDestination.GradeAnalysis -> Icons.Outlined.Insights
-    FunctionDestination.MoocCourses -> Icons.Outlined.LibraryBooks
+    FunctionDestination.MoocCourses -> Icons.AutoMirrored.Outlined.LibraryBooks
     FunctionDestination.MoocHomework,
     FunctionDestination.Homework -> Icons.Outlined.AssignmentTurnedIn
     FunctionDestination.Electronic -> Icons.Outlined.Bolt
@@ -44,15 +44,15 @@ fun functionIcon(destination: FunctionDestination): ImageVector = when (destinat
     FunctionDestination.Mandarin -> Icons.Outlined.RecordVoiceOver
     FunctionDestination.Ncre -> Icons.Outlined.Computer
     FunctionDestination.LostFound,
-    FunctionDestination.Contract -> Icons.Outlined.FactCheck
+    FunctionDestination.Contract -> Icons.AutoMirrored.Outlined.FactCheck
 }
 
 fun functionIconForId(id: String): ImageVector = when (id) {
     "schedule" -> Icons.Outlined.CalendarMonth
-    "grade" -> Icons.Outlined.FactCheck
-    "exam" -> Icons.Outlined.EventNote
+    "grade" -> Icons.AutoMirrored.Outlined.FactCheck
+    "exam" -> Icons.AutoMirrored.Outlined.EventNote
     "grade_analysis" -> Icons.Outlined.Insights
-    "mooc_courses", "document" -> Icons.Outlined.LibraryBooks
+    "mooc_courses", "document" -> Icons.AutoMirrored.Outlined.LibraryBooks
     "mooc_homework", "homework" -> Icons.Outlined.AssignmentTurnedIn
     "electric" -> Icons.Outlined.Bolt
     "classroom" -> Icons.Outlined.MeetingRoom
@@ -66,5 +66,5 @@ fun functionIconForId(id: String): ImageVector = when (id) {
     "cet" -> Icons.Outlined.Translate
     "mandarin" -> Icons.Outlined.RecordVoiceOver
     "ncre" -> Icons.Outlined.Computer
-    else -> Icons.Outlined.FactCheck
+    else -> Icons.AutoMirrored.Outlined.FactCheck
 }

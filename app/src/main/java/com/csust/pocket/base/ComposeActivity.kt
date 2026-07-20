@@ -13,6 +13,7 @@ import com.csust.pocket.core.theme.AppSkinTheme
 
 abstract class ComposeActivity : ComponentActivity() {
 
+    @Suppress("DEPRECATION")
     private fun setCustomDensity(activity: Activity, application: Application, designWidthDp: Int) {
         val appDisplayMetrics = application.resources.displayMetrics
         val targetDensity = 1.0f * appDisplayMetrics.widthPixels / designWidthDp

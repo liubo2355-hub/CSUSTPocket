@@ -40,7 +40,7 @@ import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.AssignmentTurnedIn
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.EventNote
+import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.NotificationsNone
@@ -68,7 +68,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -445,7 +445,7 @@ private fun HomeCourseHero(state: OverviewUiState, onClick: () -> Unit) {
                 drawCircle(Color.White.copy(alpha = 0.07f), size.width * 0.34f, Offset(size.width * 0.72f, size.height * 0.92f))
             }
             Icon(
-                imageVector = Icons.Outlined.EventNote,
+                imageVector = Icons.AutoMirrored.Outlined.EventNote,
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.22f),
                 modifier = Modifier
@@ -467,7 +467,7 @@ private fun HomeCourseHero(state: OverviewUiState, onClick: () -> Unit) {
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.EventNote,
+                            imageVector = Icons.AutoMirrored.Outlined.EventNote,
                             contentDescription = null,
                             tint = Color(0xFF1879E8),
                             modifier = Modifier.size(22.dp)
@@ -722,7 +722,7 @@ private fun ExamHighlightCard(
                         .background(accent.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Outlined.EventNote, null, tint = accent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Outlined.EventNote, null, tint = accent, modifier = Modifier.size(18.dp))
                 }
                 Spacer(Modifier.width(7.dp))
                 Text("考试安排", color = colors.primaryTextColor, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))

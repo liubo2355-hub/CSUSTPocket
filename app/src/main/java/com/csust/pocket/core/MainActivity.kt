@@ -144,6 +144,7 @@ class MainActivity : ComponentActivity(), DrawerController {
         private const val REQUEST_NOTIFICATION = 1002
     }
 
+    @Suppress("DEPRECATION")
     private fun setCustomDensity(activity: Activity, application: Application, designWidthDp: Int) {
         val appDisplayMetrics = application.resources.displayMetrics
         val targetDensity = appDisplayMetrics.widthPixels / designWidthDp.toFloat()

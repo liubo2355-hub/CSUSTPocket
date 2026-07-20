@@ -23,7 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
@@ -126,7 +126,7 @@ fun AddCourseScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "返回", tint = colors.primaryTextColor)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = colors.primaryTextColor)
                 }
                 Text("添加课程", modifier = Modifier.weight(1f), fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = colors.primaryTextColor)
                 TextButton(onClick = {

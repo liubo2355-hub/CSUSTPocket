@@ -45,6 +45,7 @@ abstract class FullScreenActivity<VB : ViewBinding> : AppCompatActivity() {
 
     protected val disposables = CompositeDisposable()
 
+    @Suppress("DEPRECATION")
     private fun setCustomDensity(activity: Activity, application: Application, designWidthDp: Int) {
         val appDisplayMetrics = application.resources.displayMetrics
 

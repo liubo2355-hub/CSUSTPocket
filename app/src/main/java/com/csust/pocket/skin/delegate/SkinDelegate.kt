@@ -115,7 +115,7 @@ class SkinDelegate(
                         // 1. 尝试获取 ColorStateList (支持 selector)
                         val colorStateList = if (skinResId != 0) {
                             try {
-                                skinRes!!.getColorStateList(skinResId)
+                                ResourcesCompat.getColorStateList(skinRes!!, skinResId, null)
                             } catch (e: Exception) {
                                 // 如果皮肤包里只是纯色值不是 xml，回退获取 int color
                                 android.content.res.ColorStateList.valueOf(
@@ -123,7 +123,7 @@ class SkinDelegate(
                                 )
                             }
                         } else {
-                            appRes.getColorStateList(originalResId)
+                            ResourcesCompat.getColorStateList(appRes, originalResId, null)
                         }
 
                         // 2. 使用 setCardBackgroundColor 而不是 setBackground
@@ -168,10 +168,10 @@ class SkinDelegate(
                     "btn_stroke_color" -> {
                         if (view is MaterialButton) {
                             val colorStateList = if (skinResId != 0) {
-                                try { skinRes!!.getColorStateList(skinResId) }
+                                try { ResourcesCompat.getColorStateList(skinRes!!, skinResId, null) }
                                 catch (e: Exception) { android.content.res.ColorStateList.valueOf(skinRes!!.getColor(skinResId, null)) }
                             } else {
-                                appRes.getColorStateList(originalResId)
+                                ResourcesCompat.getColorStateList(appRes, originalResId, null)
                             }
                             view.strokeColor = colorStateList
                         }
@@ -180,10 +180,10 @@ class SkinDelegate(
                     "btn_icon_tint" -> {
                         if (view is MaterialButton) {
                             val colorStateList = if (skinResId != 0) {
-                                try { skinRes!!.getColorStateList(skinResId) }
+                                try { ResourcesCompat.getColorStateList(skinRes!!, skinResId, null) }
                                 catch (e: Exception) { android.content.res.ColorStateList.valueOf(skinRes!!.getColor(skinResId, null)) }
                             } else {
-                                appRes.getColorStateList(originalResId)
+                                ResourcesCompat.getColorStateList(appRes, originalResId, null)
                             }
                             view.iconTint = colorStateList
                         }
@@ -193,13 +193,13 @@ class SkinDelegate(
                             // 1. 获取 ColorStateList (支持 selector)
                             val colorStateList = if (skinResId != 0) {
                                 try {
-                                    skinRes!!.getColorStateList(skinResId)
+                                    ResourcesCompat.getColorStateList(skinRes!!, skinResId, null)
                                 } catch (e: Exception) {
                                     // 兼容纯色值
                                     android.content.res.ColorStateList.valueOf(skinRes!!.getColor(skinResId, null))
                                 }
                             } else {
-                                appRes.getColorStateList(originalResId)
+                                ResourcesCompat.getColorStateList(appRes, originalResId, null)
                             }
 
                             // 2. 设置颜色
@@ -212,12 +212,12 @@ class SkinDelegate(
                             // 1. 获取 ColorStateList
                             val colorStateList = if (skinResId != 0) {
                                 try {
-                                    skinRes!!.getColorStateList(skinResId)
+                                    ResourcesCompat.getColorStateList(skinRes!!, skinResId, null)
                                 } catch (e: Exception) {
                                     android.content.res.ColorStateList.valueOf(skinRes!!.getColor(skinResId, null))
                                 }
                             } else {
-                                appRes.getColorStateList(originalResId)
+                                ResourcesCompat.getColorStateList(appRes, originalResId, null)
                             }
 
                             // 2. 设置 Hint 颜色
