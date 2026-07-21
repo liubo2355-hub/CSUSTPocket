@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.NotificationsNone
@@ -303,6 +304,7 @@ private fun ProfileSettingsScreen(
             listOf(
                 SettingItemUiModel.Option("15", "检查更新", R.drawable.qingchu),
                 SettingItemUiModel.Option("9", "关于掌上长理", R.drawable.ic_guanyuwomen),
+                SettingItemUiModel.Option("16", "软件官网", R.drawable.ic_document),
                 SettingItemUiModel.Option("12", "用户协议", R.drawable.ic_document)
             ),
             onItemClick
@@ -414,6 +416,7 @@ private fun profileIcon(id: String): ImageVector = when (id) {
     "13" -> Icons.Outlined.Widgets
     "15" -> Icons.Outlined.SystemUpdateAlt
     "9" -> Icons.Outlined.Info
+    "16" -> Icons.Outlined.Language
     "12" -> Icons.Outlined.Article
     else -> Icons.Outlined.Info
 }
@@ -559,6 +562,7 @@ private fun handleSettingItemClick(
         "8" -> Route.goParitySettings(context, ParitySettingsActivity.MODE_NOTIFICATION)
         "13" -> Route.goParitySettings(context, ParitySettingsActivity.MODE_WIDGET)
         "9" -> Route.goAbout(context)
+        "16" -> Route.goSoftwareWebsite(context)
         "12" -> Route.goContract(context)
         "11" -> Route.goMooc(context)
     }

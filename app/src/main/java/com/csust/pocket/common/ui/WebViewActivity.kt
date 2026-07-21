@@ -9,6 +9,7 @@ import android.os.Message
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -16,6 +17,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.webkit.WebViewAssetLoader
 import com.csust.pocket.base.BaseActivity
 import com.csust.pocket.databinding.ActivityFeedbackBinding
 import com.csust.pocket.widget.dialog.NormalChosenDialog
@@ -28,6 +30,11 @@ class WebViewActivity : BaseActivity<ActivityFeedbackBinding>() {
 
     private val showUrl: String by lazy {
         intent.getStringExtra(URL_TAG) ?: ""
+    }
+    private val assetLoader: WebViewAssetLoader by lazy {
+        WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
     }
     override fun createViewBinding(): ActivityFeedbackBinding {
         return ActivityFeedbackBinding.inflate(layoutInflater)
@@ -126,6 +133,15 @@ class WebViewActivity : BaseActivity<ActivityFeedbackBinding>() {
             }
 
             webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): WebResourceResponse? {
+                    val url = request?.url ?: return super.shouldInterceptRequest(view, request)
+                    return assetLoader.shouldInterceptRequest(url)
+                        ?: super.shouldInterceptRequest(view, request)
+                }
+
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     super.onPageStarted(view, url, favicon)
                     progressBar.isIndeterminate = true
