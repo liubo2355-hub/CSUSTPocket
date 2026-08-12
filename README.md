@@ -8,17 +8,11 @@
 
 掌上长理基于 CreaMakers 的开源项目 [changli-planet-app](https://github.com/CreaMakers/changli-planet-app) 进行二次开发，并依照原项目采用的 MIT License 使用、修改和分发相关代码。
 
-本项目持续保留原项目的 `Copyright (c) 2026 CreaMakers` 版权声明和完整 MIT License。掌上长理开发团队的版权声明仅适用于其独立新增或修改的部分，不替代 CreaMakers 对原项目代码的版权声明。
-
-Android 包标识 `com.creamaker.pocket_csust` 是为保证已安装用户能够原地升级而保留的历史兼容标识，不表示该应用、掌上长理开发团队或其新增代码归属于 CreaMakers，也不表示双方存在官方隶属关系。若未来迁移包标识，将提供明确的数据与升级迁移方案。
+本项目保留 `Copyright (c) 2026 CreaMakers` 及完整 MIT License。掌上长理开发团队的版权声明仅适用于独立新增或修改的部分。
 
 ## 后端服务说明
 
-应用当前默认使用由 CreaMakers 独立开发、部署和维护的后端服务。该后端服务、域名、接口、数据、鉴权方式及基础设施不属于掌上长理，MIT License 对源代码的授权也不包含对在线服务的永久使用权或可用性承诺。
-
-相关接口、访问策略、速率限制和服务可用性可能因维护、安全或业务需要调整、限制、暂停或终止。掌上长理不得滥用、越权调用、批量抓取或向未授权第三方转授访问能力，并自行承担后端变化产生的兼容性和可用性风险。构建者可以通过 `local.properties` 中的 `planet.apiBaseUrl.debug`、`planet.apiBaseUrl.release`，或环境变量 `PLANET_API_BASE_URL_DEBUG`、`PLANET_API_BASE_URL_RELEASE` 配置经授权的替代服务地址。
-
-客户端仅在校历和校园地图正常功能所需范围内访问该服务，并实施以下约束：校园地图成功数据缓存 24 小时、同类并发请求合并、校历主动刷新设置 30 秒最短间隔、服务失败设置冷却窗口、HTTP 客户端关闭透明自动重试并携带可审计的客户端名称和版本标识。
+应用部分功能使用由 CreaMakers 独立维护的后端服务。该在线服务不属于掌上长理或 MIT License 授权内容，其接口和可用性可能调整、限制、暂停或终止。
 
 ## 主要功能
 
@@ -51,7 +45,7 @@ Android 包标识 `com.creamaker.pocket_csust` 是为保证已安装用户能够
 
 ## 参与开发
 
-掌上长理欢迎开发者参与客户端、产品与视觉设计工作。CreaMakers 后端不属于本项目的可贡献范围。
+掌上长理欢迎开发者参与客户端、产品与视觉设计工作。
 
 欢迎提交 PR。有关项目技术细节请参考 [CONTRIBUTING](docs/contribution/分支规范.md)。
 
