@@ -38,6 +38,17 @@ object RetrofitUtils {
     //添加公共请求头 - 用于需要认证的 API
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            // CreaMakers 后端仅用于正常 App 功能。关闭连接层透明重试，避免服务异常时
+            // 单次用户操作被放大为多次请求；同时明确标识调用方和版本，便于服务端审计。
+            .retryOnConnectionFailure(false)
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("User-Agent", "CSUSTPocket-Android/${BuildConfig.VERSION_NAME}")
+                    .header("X-Client-Name", "CSUSTPocket")
+                    .header("X-Client-Version", BuildConfig.VERSION_NAME)
+                    .build()
+                chain.proceed(request)
+            }
             //配置HTTPDNS解析
             .dns(object : Dns {
                 override fun lookup(hostname: String): List<InetAddress> {

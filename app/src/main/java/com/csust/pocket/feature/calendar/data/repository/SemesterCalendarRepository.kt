@@ -1,6 +1,7 @@
 package com.csust.pocket.feature.calendar.data.repository
 
 import com.csust.pocket.feature.calendar.data.CalendarIsoUtils
+import com.csust.pocket.core.network.PlanetRequestPolicy
 import com.csust.pocket.feature.calendar.data.local.SemesterCalendarCache
 import com.csust.pocket.feature.calendar.data.remote.api.SemesterCalendarApi
 import com.csust.pocket.feature.calendar.data.remote.dto.SemesterCalendarDetail
@@ -10,6 +11,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
@@ -36,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object SemesterCalendarRepository {
 
+
     // ---------------- 依赖 ----------------
 
     private var apiOverride: SemesterCalendarApi? = null
@@ -58,6 +62,11 @@ object SemesterCalendarRepository {
      * 因是 App 级单例，进程退出时随 JVM 自然回收；业务侧不需要手动取消。
      */
     private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val listRefreshMutex = Mutex()
+    private val detailRefreshMutexes = ConcurrentHashMap<String, Mutex>()
+    @Volatile
+    private var lastForcedListRefreshAt = 0L
+    private val lastForcedDetailRefreshAt = ConcurrentHashMap<String, Long>()
 
     // ---------------- 内存层 ----------------
 
@@ -84,17 +93,29 @@ object SemesterCalendarRepository {
             if (!forceRefresh) {
                 getListSync()?.let { return@withContext Result.success(it) }
             }
-            val remote = runCatching { api.getSemesterCalendars() }
-            remote.onSuccess { list ->
-                memoryList = list
-                SemesterCalendarCache.saveList(list)
+            listRefreshMutex.withLock {
+                if (!forceRefresh) {
+                    getListSync()?.let { return@withLock Result.success(it) }
+                } else {
+                    val now = System.currentTimeMillis()
+                    if (PlanetRequestPolicy.isCoolingDown(lastForcedListRefreshAt, now)) {
+                        getListSync()?.let { return@withLock Result.success(it) }
+                        return@withLock Result.failure(
+                            IllegalStateException("刷新过于频繁，请稍后再试")
+                        )
+                    }
+                    lastForcedListRefreshAt = now
+                }
+                val remote = runCatching { api.getSemesterCalendars() }
+                remote.onSuccess { list ->
+                    memoryList = list
+                    SemesterCalendarCache.saveList(list)
+                }
+                if (remote.isFailure && !forceRefresh) {
+                    getListSync()?.let { return@withLock Result.success(it) }
+                }
+                remote
             }
-            // 非强制刷新场景下，网络失败 + 有本地缓存 → 降级返回 success，保证冷启动不抹数据；
-            // 强制刷新（用户主动点刷新）必须如实上报失败，否则 VM 无法给用户 toast 提示
-            if (remote.isFailure && !forceRefresh) {
-                getListSync()?.let { return@withContext Result.success(it) }
-            }
-            remote
         }
 
     // ---------------- 详情 ----------------
@@ -125,16 +146,31 @@ object SemesterCalendarRepository {
         if (!forceRefresh) {
             getDetailSync(semesterCode)?.let { return@withContext Result.success(it) }
         }
-        val remote = runCatching { api.getSemesterCalendarDetail(semesterCode) }
-        remote.onSuccess { detail ->
-            memoryDetails[semesterCode] = detail
-            SemesterCalendarCache.saveDetail(detail)
+        val mutex = detailRefreshMutexes.getOrPut(semesterCode) { Mutex() }
+        mutex.withLock {
+            if (!forceRefresh) {
+                getDetailSync(semesterCode)?.let { return@withLock Result.success(it) }
+            } else {
+                val now = System.currentTimeMillis()
+                val lastRefresh = lastForcedDetailRefreshAt[semesterCode] ?: 0L
+                if (PlanetRequestPolicy.isCoolingDown(lastRefresh, now)) {
+                    getDetailSync(semesterCode)?.let { return@withLock Result.success(it) }
+                    return@withLock Result.failure(
+                        IllegalStateException("刷新过于频繁，请稍后再试")
+                    )
+                }
+                lastForcedDetailRefreshAt[semesterCode] = now
+            }
+            val remote = runCatching { api.getSemesterCalendarDetail(semesterCode) }
+            remote.onSuccess { detail ->
+                memoryDetails[semesterCode] = detail
+                SemesterCalendarCache.saveDetail(detail)
+            }
+            if (remote.isFailure && !forceRefresh) {
+                getDetailSync(semesterCode)?.let { return@withLock Result.success(it) }
+            }
+            remote
         }
-        // 同 getList：仅非强制刷新场景下降级，避免吞掉用户主动刷新的失败
-        if (remote.isFailure && !forceRefresh) {
-            getDetailSync(semesterCode)?.let { return@withContext Result.success(it) }
-        }
-        remote
     }
 
     // ---------------- 学期开学日期（供 CommonInfo 调用） ----------------
