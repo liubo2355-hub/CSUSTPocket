@@ -34,6 +34,9 @@ import com.csust.pocket.skin.ui.SkinSelectionActivity
  */
 object Route {
 
+    private const val SOFTWARE_WEBSITE_URL =
+        "https://appassets.androidplatform.net/assets/software-website/index.html"
+
     fun goCampusMap(context: Context) {
         val intent = Intent(context, CampusMapActivity::class.java)
         context.startActivity(intent)
@@ -172,6 +175,8 @@ object Route {
         val intent = Intent(context, AboutActivity::class.java)
         context.startActivity(intent)
     }
+
+    fun goSoftwareWebsite(context: Context) = goWebView(context, SOFTWARE_WEBSITE_URL)
 
     fun goParitySettings(context: Context, mode: String) {
         context.startActivity(Intent(context, ParitySettingsActivity::class.java).putExtra(ParitySettingsActivity.EXTRA_MODE, mode))

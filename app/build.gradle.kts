@@ -74,8 +74,8 @@ android {
         applicationId = "com.creamaker.pocket_csust"
         minSdk = 24
         targetSdk = 36
-        versionCode = 61
-        versionName = "2.0.39"
+        versionCode = 64
+        versionName = "2.0.42"
         val amapKeyFromLocal: String = localProperties.getProperty("amap.apiKey")
             ?: System.getenv("AMAP_API_KEY")
             ?: ""
@@ -250,6 +250,7 @@ dependencies {
 
     // workmanager
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.webkit)
     implementation(project(":CP_Common"))
     //CodeLocator
     debugImplementation(libs.codelocator.core)
