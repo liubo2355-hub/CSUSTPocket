@@ -74,8 +74,8 @@ android {
         applicationId = "com.creamaker.pocket_csust"
         minSdk = 24
         targetSdk = 36
-        versionCode = 62
-        versionName = "2.0.40"
+        versionCode = 63
+        versionName = "2.0.41"
         val amapKeyFromLocal: String = localProperties.getProperty("amap.apiKey")
             ?: System.getenv("AMAP_API_KEY")
             ?: ""
