@@ -282,11 +282,13 @@ function App() {
             <div className="final-open-source">
               <span className="footer-kicker">04 / OPEN SOURCE</span>
               <strong>一起参与掌上长理</strong>
-              <p>欢迎通过 Pull Request 参与客户端、服务端、产品与视觉设计工作。</p>
+              <p>掌上长理基于 CreaMakers 的 changli-planet-app 二次开发，并依照 MIT License 保留原项目版权声明。</p>
               <nav className="footer-links" aria-label="项目相关链接">
+                <a href="https://github.com/CreaMakers/changli-planet-app" target="_blank" rel="noreferrer">原项目</a>
                 <a href="https://github.com/liubo2355-hub/CSUSTPocket/blob/main/docs/contribution/%E5%88%86%E6%94%AF%E8%8C%83.md" target="_blank" rel="noreferrer">CONTRIBUTING</a>
                 <a href="https://github.com/liubo2355-hub/CSUSTPocket/blob/main/LICENSE" target="_blank" rel="noreferrer">MIT LICENSE</a>
               </nav>
+              <small>Copyright (c) 2026 CreaMakers</small>
             </div>
           </EnteringMotion>
         </section>
@@ -301,15 +303,16 @@ function App() {
           >
             <span className="footer-kicker">09 / OPEN SOURCE</span>
             <strong>一起参与掌上长理</strong>
-            <p>欢迎参与客户端、服务端、产品与视觉设计工作，并通过 Pull Request 贡献代码。</p>
+            <p>掌上长理基于 CreaMakers 的 changli-planet-app 二次开发。欢迎参与客户端、产品与视觉设计工作，并通过 Pull Request 贡献代码。</p>
             <div className="tech-stack" aria-label="技术栈">
               {['KOTLIN', 'JETPACK COMPOSE', 'MATERIAL 3', 'ROOM / MMKV', 'RETROFIT / OKHTTP', 'WORKMANAGER', 'GLANCE'].map((item) => <span key={item}>{item}</span>)}
             </div>
             <nav className="footer-links" aria-label="项目相关链接">
+              <a href="https://github.com/CreaMakers/changli-planet-app" target="_blank" rel="noreferrer">原项目</a>
               <a href="https://github.com/liubo2355-hub/CSUSTPocket/blob/main/docs/contribution/%E5%88%86%E6%94%AF%E8%A7%84%E8%8C%83.md" target="_blank" rel="noreferrer">CONTRIBUTING</a>
               <a href="https://github.com/liubo2355-hub/CSUSTPocket/blob/main/LICENSE" target="_blank" rel="noreferrer">MIT LICENSE</a>
             </nav>
-            <small>掌上长理为非官方校园工具，与长沙理工大学及校内各业务系统不存在隶属或授权关系。数据可能因网络、系统维护或接口调整出现延迟与差异，重要信息请以学校官方渠道为准。</small>
+            <small>Copyright (c) 2026 CreaMakers。应用当前默认使用由 CreaMakers 维护的后端服务；该在线服务不属于掌上长理或 MIT License 授权的一部分，接口与可用性可能调整、限制、暂停或终止。掌上长理为非官方校园工具，与长沙理工大学及校内各业务系统不存在隶属或授权关系。</small>
           </motion.div>
           <button className="back-top" type="button" onClick={resetToTop}>
             返回顶部 <ArrowUpRight size={15} strokeWidth={1.5} />
