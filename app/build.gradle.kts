@@ -19,6 +19,20 @@ val localProperties = Properties().apply {
     }
 }
 
+val verifyMitLicense by tasks.registering {
+    val repositoryLicense = rootProject.file("LICENSE")
+    val packagedLicense = file("src/main/res/raw/mit_license.txt")
+    inputs.files(repositoryLicense, packagedLicense)
+    doLast {
+        fun File.normalizedLicenseText() = readText()
+            .replace("\r\n", "\n")
+            .trimEnd()
+        check(repositoryLicense.normalizedLicenseText() == packagedLicense.normalizedLicenseText()) {
+            "app/src/main/res/raw/mit_license.txt must exactly match the root LICENSE file"
+        }
+    }
+}
+
 // 掌上长理 Go 服务�?BaseUrl：优�?local.properties，其次环境变量，最后兜底默认值�?
 // 值需�?"/" 结尾（Retrofit BaseUrl 要求）�?
 val planetApiBaseUrlDebug: String = localProperties.getProperty("planet.apiBaseUrl.debug")
@@ -145,6 +159,10 @@ android {
     buildFeatures {
         viewBinding = true
     }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(verifyMitLicense)
 }
 
 androidComponents {

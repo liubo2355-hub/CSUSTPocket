@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -109,13 +109,19 @@ fun AboutScreen(activity: Activity? = null) {
             Spacer(Modifier.height(14.dp))
             AboutSection(
                 title = "项目来源与版权",
-                content = "掌上长理基于 CreaMakers 的开源项目 changli-planet-app 进行二次开发。\n\nCopyright (c) 2026 CreaMakers\n\n点击访问原项目：\n$ORIGINAL_PROJECT_URL",
-                onClick = { uriHandler.openUri(ORIGINAL_PROJECT_URL) }
+                content = "掌上长理基于 CreaMakers 的开源项目 changli-planet-app 进行二次开发。\n\nCopyright (c) 2026 CreaMakers\n\n原项目：$ORIGINAL_PROJECT_URL",
+                actionLabel = "访问原项目",
+                onAction = { uriHandler.openUri(ORIGINAL_PROJECT_URL) }
             )
             Spacer(Modifier.height(14.dp))
             AboutSection(
                 title = "开源许可证（MIT License）",
                 content = licenseText
+            )
+            Spacer(Modifier.height(14.dp))
+            AboutSection(
+                title = "后端服务说明",
+                content = "应用当前默认使用由 CreaMakers 独立开发、部署和维护的后端服务。该在线服务不属于掌上长理，也不包含在 MIT License 的源代码授权中。其接口、访问策略、速率限制和可用性可能随时调整、限制、暂停或终止。掌上长理不得滥用、越权调用、批量抓取或向未授权第三方转授访问能力，并自行承担服务变化带来的兼容性和可用性风险。"
             )
             Spacer(Modifier.height(14.dp))
             AboutSection(
@@ -137,12 +143,11 @@ fun AboutScreen(activity: Activity? = null) {
 private fun AboutSection(
     title: String,
     content: String,
-    onClick: (() -> Unit)? = null
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null
 ) {
     HyperSurface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = AppTheme.colors.bgCardColor
     ) {
@@ -160,6 +165,14 @@ private fun AboutSection(
                 lineHeight = 22.sp,
                 modifier = Modifier.padding(top = 10.dp)
             )
+            if (actionLabel != null && onAction != null) {
+                TextButton(
+                    onClick = onAction,
+                    modifier = Modifier.padding(top = 6.dp)
+                ) {
+                    Text(actionLabel)
+                }
+            }
         }
     }
 }
