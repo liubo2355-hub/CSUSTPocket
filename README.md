@@ -1,5 +1,10 @@
 # 掌上长理
 
+## 项目仓库
+
+- [GitHub](https://github.com/liubo2355-hub/CSUSTPocket)
+- [Gitee](https://gitee.com/liubo2355-hub/csustpocket)
+
 ## 项目来源与版权
 
 掌上长理基于 CreaMakers 的开源项目 [changli-planet-app](https://github.com/CreaMakers/changli-planet-app) 进行二次开发，并依照原项目采用的 MIT License 使用、修改和分发相关代码。
