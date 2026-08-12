@@ -4,6 +4,12 @@
 
 掌上长理是一款面向长沙理工大学师生的校园工具应用，提供课表、成绩、考试安排、网络课程、宿舍电量、校园服务等功能，帮助用户更便捷地获取与管理校园信息。
 
+## 项目来源与版权
+
+掌上长理基于 CreaMakers 的开源项目 [changli-planet-app](https://github.com/CreaMakers/changli-planet-app) 进行二次开发，并依照原项目采用的 MIT License 使用、修改和分发相关代码。
+
+本项目持续保留原项目的 `Copyright (c) 2026 CreaMakers` 版权声明和完整 MIT License。掌上长理开发团队的版权声明仅适用于其独立新增或修改的部分，不替代 CreaMakers 对原项目代码的版权声明。
+
 ## 主要功能
 
 - **课表查询**：查看本周课表，支持自定义课程与长按拖动，离线也能查看。
@@ -59,4 +65,4 @@
 
 ## 许可证
 
-[MIT License](./LICENSE)
+本项目采用 [MIT License](./LICENSE)。分发本项目源码、安装包或其他包含原项目全部或实质部分的副本时，须一并保留 LICENSE 中的版权声明和完整许可文本。
