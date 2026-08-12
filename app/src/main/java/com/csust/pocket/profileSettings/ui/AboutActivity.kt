@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,15 +16,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +49,14 @@ class AboutActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(activity: Activity? = null) {
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+    val licenseText = remember {
+        context.resources.openRawResource(R.raw.mit_license)
+            .bufferedReader()
+            .use { it.readText() }
+    }
+
     Scaffold(
         containerColor = AppTheme.colors.bgPrimaryColor,
         topBar = {
@@ -99,6 +108,17 @@ fun AboutScreen(activity: Activity? = null) {
             )
             Spacer(Modifier.height(14.dp))
             AboutSection(
+                title = "项目来源与版权",
+                content = "掌上长理基于 CreaMakers 的开源项目 changli-planet-app 进行二次开发。\n\nCopyright (c) 2026 CreaMakers\n\n点击访问原项目：\n$ORIGINAL_PROJECT_URL",
+                onClick = { uriHandler.openUri(ORIGINAL_PROJECT_URL) }
+            )
+            Spacer(Modifier.height(14.dp))
+            AboutSection(
+                title = "开源许可证（MIT License）",
+                content = licenseText
+            )
+            Spacer(Modifier.height(14.dp))
+            AboutSection(
                 title = "免责声明",
                 content = "掌上长理为非官方校园工具，与长沙理工大学及校内各业务系统不存在隶属或授权关系。应用展示的数据可能因网络、系统维护或接口调整出现延迟与差异，重要信息请以学校官方渠道为准。用户应妥善保管账号信息，并自行判断和承担使用相关功能产生的风险。"
             )
@@ -114,9 +134,15 @@ fun AboutScreen(activity: Activity? = null) {
 }
 
 @Composable
-private fun AboutSection(title: String, content: String) {
+private fun AboutSection(
+    title: String,
+    content: String,
+    onClick: (() -> Unit)? = null
+) {
     HyperSurface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         shape = RoundedCornerShape(18.dp),
         color = AppTheme.colors.bgCardColor
     ) {
@@ -137,3 +163,6 @@ private fun AboutSection(title: String, content: String) {
         }
     }
 }
+
+private const val ORIGINAL_PROJECT_URL =
+    "https://github.com/CreaMakers/changli-planet-app"
