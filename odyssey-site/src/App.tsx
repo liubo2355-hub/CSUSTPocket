@@ -268,8 +268,8 @@ function App() {
             <div className="download-actions">
               <motion.a
                 className="signal-button"
-                href="https://gitee.com/liubo2355-hub/csustpocket/releases/download/v2.0.41/CSUSTPocket_release_v2.0.41.apk"
-                download="CSUSTPocket_release_v2.0.41.apk"
+                href="https://gitee.com/liubo2355-hub/csustpocket/releases/download/v2.0.42/CSUSTPocket_release_v2.0.42.apk"
+                download="CSUSTPocket_release_v2.0.42.apk"
                 whileHover={{ x: 5 }}
                 whileTap={{ scale: 0.97 }}
               >
